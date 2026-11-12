@@ -118,6 +118,7 @@ export function CheckForm({ language }: CheckFormProps) {
   }
 
   function handleChange(nextValue: string) {
+    requestId.current += 1;
     setValue(nextValue);
     setHasError(false);
     setCheckError(false);
@@ -147,7 +148,14 @@ export function CheckForm({ language }: CheckFormProps) {
           />
           <div className="space-y-2">
             <label className="text-xs font-medium text-muted-foreground" htmlFor="safesign-network">{copy.networkLabel}</label>
-            <Select onValueChange={(next) => setNetworkId(next as NetworkId)} value={networkId}>
+            <Select
+              onValueChange={(next) => {
+                setNetworkId(next as NetworkId);
+                setTransactionReport(null);
+                setTransactionError(false);
+              }}
+              value={networkId}
+            >
               <SelectTrigger className="h-11 rounded-lg border-border bg-input-surface" id="safesign-network">
                 <SelectValue />
               </SelectTrigger>
