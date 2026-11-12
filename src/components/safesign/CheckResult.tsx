@@ -12,7 +12,6 @@ import {
   X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
 import type { CheckResult as CheckResultData } from "./api.js";
 import type { TransactionReportData } from "./chain.js";
 import type { Language } from "./language";
@@ -107,8 +106,16 @@ export function CheckResultCard({ result, language, onCheckAnother }: CheckResul
           <span className="font-medium">{copy.score}</span>
           <span className="text-muted-foreground">{copy.scoreHelp}</span>
         </div>
-        <Progress aria-label={`${copy.score}: ${result.score}%`} className="h-2.5 bg-secondary" value={result.score} />
-        <div aria-hidden="true" className={`-mt-2 h-2.5 w-0 ${tone.bar}`} />
+        <div
+          aria-label={`${copy.score}: ${result.score}%`}
+          aria-valuemax={100}
+          aria-valuemin={0}
+          aria-valuenow={result.score}
+          className="h-2.5 w-full overflow-hidden rounded-full bg-secondary"
+          role="progressbar"
+        >
+          <div className={`h-full rounded-full transition-[width] ${tone.bar}`} style={{ width: `${result.score}%` }} />
+        </div>
       </div>
 
       <ul className="space-y-3">
