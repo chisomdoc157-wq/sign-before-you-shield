@@ -36,7 +36,7 @@ export function BrandHeader({ language, onLanguageChange }: BrandHeaderProps) {
       >
         <Button
           aria-pressed={language === "en"}
-          className="h-8 px-3 text-xs"
+          className={`h-8 px-3 text-xs transition-none ${language === "en" ? "font-semibold shadow-sm ring-1 ring-inset ring-primary" : "shadow-none"}`}
           onClick={() => onLanguageChange("en")}
           size="sm"
           type="button"
@@ -46,7 +46,7 @@ export function BrandHeader({ language, onLanguageChange }: BrandHeaderProps) {
         </Button>
         <Button
           aria-pressed={language === "pcm"}
-          className="h-8 px-3 text-xs"
+          className={`h-8 px-3 text-xs transition-none ${language === "pcm" ? "font-semibold shadow-sm ring-1 ring-inset ring-primary" : "shadow-none"}`}
           onClick={() => onLanguageChange("pcm")}
           size="sm"
           type="button"
