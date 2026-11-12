@@ -157,7 +157,7 @@ export function CheckForm({ language }: CheckFormProps) {
               }}
               value={networkId}
             >
-              <SelectTrigger className="h-11 rounded-lg border-border bg-input-surface" disabled={isChecking || transactionLoading} id="safesign-network">
+              <SelectTrigger className="h-11 rounded-lg border-border bg-input-surface" disabled={isChecking || transactionLoading || Boolean(result)} id="safesign-network">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -184,12 +184,6 @@ export function CheckForm({ language }: CheckFormProps) {
       </form>
 
       {result ? <CheckResultCard language={language} onCheckAnother={reset} result={result} /> : null}
-      {result && transactionLoading ? (
-        <p className="mt-5 flex items-center gap-2 text-sm text-muted-foreground" role="status">
-          <LoaderCircle aria-hidden="true" className="size-4 animate-spin" />
-          {language === "en" ? "Loading transaction details…" : "We dey load transaction details…"}
-        </p>
-      ) : null}
       {result ? (
         <TransactionReport error={transactionError} language={language} loading={transactionLoading} report={transactionReport} />
       ) : null}
