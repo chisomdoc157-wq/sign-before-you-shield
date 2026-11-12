@@ -39,7 +39,7 @@ const resultCopy = {
     contractCreation: "Contract creation",
     value: "Amount",
     gas: "Gas used",
-    block: "Block",
+    blockNumber: "Block",
     time: "Time",
     noTimestamp: "Not confirmed yet",
     chainData: "Transaction details come from the selected public blockchain network.",
@@ -66,7 +66,7 @@ const resultCopy = {
     contractCreation: "Contract creation",
     value: "Amount",
     gas: "Gas used",
-    block: "Block",
+    blockNumber: "Block",
     time: "Time",
     noTimestamp: "Dem never confirm am",
     chainData: "Transaction details come from the public blockchain network wey you choose.",
@@ -208,7 +208,7 @@ export function TransactionReport({ report, loading, error, language }: Transact
             </div>
             <div className="flex min-w-0 items-start gap-2">
               <ExternalLink aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
-              <div><dt className="text-muted-foreground">{copy.block}</dt><dd>{report.blockNumber ? BigInt(report.blockNumber).toLocaleString() : "—"}</dd></div>
+              <div><dt className="text-muted-foreground">{copy.blockNumber}</dt><dd>{report.blockNumber ? BigInt(report.blockNumber).toLocaleString() : "—"}</dd></div>
             </div>
             <div className="flex min-w-0 items-start gap-2">
               <Clock3 aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-muted-foreground" />

@@ -31,3 +31,4 @@ use the editor.
 
 ## App structure
 - Keep the home screen’s independently testable SafeSign header and input in focused components under `src/components/safesign`, so each part stays easy to maintain.
+- Keep external screening and public-chain requests behind focused SafeSign API modules so UI code can change independently of data sources.
