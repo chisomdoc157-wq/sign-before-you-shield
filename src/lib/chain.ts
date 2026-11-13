@@ -140,3 +140,34 @@ export async function getTransactionReport(
     timestamp: blockTimestamp,
   };
 }
+export type NetworkChoice = NetworkId | "auto";
+
+/** Checks every supported network at once and returns the first one that has the hash. */
+export async function findTransactionAnywhere(hash: string): Promise<TransactionReport> {
+  const ids = Object.keys(networks) as NetworkId[];
+  let failures = 0;
+  try {
+    return await Promise.any(
+      ids.map(async (id) => {
+        try {
+          const report = await getTransactionReport(hash, id);
+          if (report.found) return report;
+        } catch {
+          failures += 1;
+        }
+        throw new Error("not on this network");
+      }),
+    );
+  } catch {
+    if (failures === ids.length) throw new Error("Could not reach any network.");
+    return {
+      ...makeNotFoundReport(hash.trim(), "base"),
+      networkId: "auto",
+      networkName: "any supported network",
+    };
+  }
+}
+
+export function loadReport(hash: string, choice: NetworkChoice): Promise<TransactionReport> {
+  return choice === "auto" ? findTransactionAnywhere(hash) : getTransactionReport(hash, choice);
+}
