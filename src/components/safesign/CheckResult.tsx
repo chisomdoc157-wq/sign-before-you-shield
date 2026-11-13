@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { CheckResult as CheckResultData } from "./api.js";
-import type { TransactionReportData } from "./chain.js";
+import type { TransactionReport } from "@/lib/types";
 import type { Language } from "./language";
 
 const resultCopy = {
@@ -143,7 +143,7 @@ export function CheckResultCard({ result, language, onCheckAnother }: CheckResul
 }
 
 interface TransactionReportProps {
-  report: TransactionReportData | null;
+  report: TransactionReport | null;
   loading: boolean;
   error: boolean;
   language: Language;
