@@ -9,9 +9,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { getTransactionReport, isTransactionHash } from "@/lib/chain";
+import { networks, type NetworkId } from "@/lib/networks";
+import type { TransactionReport as TransactionReportData } from "@/lib/types";
 import { checkInput, type CheckResult as CheckResultData } from "./api.js";
-import { getTransactionReport, isTransactionHash, type TransactionReportData } from "./chain.js";
-import { networks, type NetworkId } from "./networks.js";
 import { CheckResultCard, TransactionReport } from "./CheckResult";
 import type { Language } from "./language";
 
@@ -182,6 +183,24 @@ export function CheckForm({ language }: CheckFormProps) {
         <p className="text-center text-sm leading-6 text-muted-foreground" id="safesign-privacy-note">{copy.privacy}</p>
         {checkError ? <p className="text-center text-sm leading-6 text-destructive" role="alert">{copy.error}</p> : null}
       </form>
+
+      <div className="mt-3 flex justify-center">
+        <Button
+          className="text-xs"
+          onClick={() => {
+            const hash = window.prompt("Transaction hash to test");
+            if (!hash) return;
+            void getTransactionReport(hash, networkId)
+              .then((report) => console.info("SafeSign blockchain test result:", report))
+              .catch((error: unknown) => console.error("SafeSign blockchain test failed:", error));
+          }}
+          size="sm"
+          type="button"
+          variant="outline"
+        >
+          Run blockchain test
+        </Button>
+      </div>
 
       {result ? <CheckResultCard language={language} onCheckAnother={reset} result={result} /> : null}
       {result ? (
