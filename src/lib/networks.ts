@@ -8,17 +8,28 @@ import {
   polygon,
   type Chain,
 } from "viem/chains";
+import { defineChain } from "viem";
 
-export type NetworkId = "base" | "ethereum" | "bnb" | "polygon" | "arbitrum" | "optimism" | "base-sepolia";
+export type NetworkId = "base" | "ethereum" | "bnb" | "polygon" | "arbitrum" | "optimism" | "base-sepolia" | "world_chain" | "robinhood";
 
 export interface NetworkConfig {
-  id: NetworkId;
-  name: string;
-  viemChain: Chain;
-  rpcUrl: string;
-  nativeSymbol: string;
-  explorerUrl: string;
+  // ...keep the existing fields, and add:
+  backendOnly?: boolean;
 }
+
+const worldChain = defineChain({
+  id: 480,
+  name: "World Chain",
+  nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
+  rpcUrls: { default: { http: [] } },
+});
+
+const robinhoodChain = defineChain({
+  id: 4663,
+  name: "Robinhood Chain",
+  nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
+  rpcUrls: { default: { http: [] } },
+});
 
 export const networks: Record<NetworkId, NetworkConfig> = {
   base: {
@@ -76,5 +87,23 @@ export const networks: Record<NetworkId, NetworkConfig> = {
     rpcUrl: "https://sepolia.base.org",
     nativeSymbol: "ETH",
     explorerUrl: "https://sepolia.basescan.org",
+  },
+    world_chain: {
+    id: "world_chain",
+    name: "World Chain",
+    viemChain: worldChain,
+    rpcUrl: "",
+    nativeSymbol: "ETH",
+    explorerUrl: "https://worldscan.org",
+    backendOnly: true,
+  },
+  robinhood: {
+    id: "robinhood",
+    name: "Robinhood Chain",
+    viemChain: robinhoodChain,
+    rpcUrl: "",
+    nativeSymbol: "ETH",
+    explorerUrl: "",
+    backendOnly: true,
   },
 };
