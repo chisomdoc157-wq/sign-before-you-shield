@@ -32,3 +32,4 @@ use the editor.
 ## App structure
 - Keep the home screen’s independently testable SafeSign header and input in focused components under `src/components/safesign`, so each part stays easy to maintain.
 - Keep external screening and public-chain requests behind focused SafeSign API modules; keep chain configuration, token metadata, and report types in `src/lib` so UI code stays independent of data sources.
+- Keep transaction verification and payment matching behind a typed backend API client, with no browser-side RPC reads, so chain data remains backend-sourced.
