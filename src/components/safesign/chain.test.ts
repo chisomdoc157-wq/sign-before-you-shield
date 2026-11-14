@@ -44,6 +44,3 @@ describe("SafeSign blockchain configuration", () => {
     ]);
   });
 });
-    });
-  });
-});
