@@ -144,7 +144,7 @@ export type NetworkChoice = NetworkId | "auto";
 
 /** Checks every supported network at once and returns the first one that has the hash. */
 export async function findTransactionAnywhere(hash: string): Promise<TransactionReport> {
-  const ids = Object.keys(networks) as NetworkId[];
+  const ids = (Object.keys(networks) as NetworkId[]).filter((id) => !networks[id].backendOnly);
   let failures = 0;
   try {
     return await Promise.any(
