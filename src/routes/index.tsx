@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { BrandHeader } from "@/components/safesign/BrandHeader";
 import CheckForm from "@/components/safesign/CheckForm";
 import {
@@ -23,7 +23,22 @@ export const Route = createFileRoute("/")({
 });
 
 function Index() {
-  const [language, setLanguage] = useState<Language>("en");
+const [language, setLanguage] = useState<Language>("en");
+
+useEffect(() => {
+  const savedLanguage = localStorage.getItem("safesign-language");
+
+  if (
+    savedLanguage &&
+    languages.some((item) => item.code === savedLanguage)
+  ) {
+    setLanguage(savedLanguage as Language);
+  }
+}, []);
+
+useEffect(() => {
+  localStorage.setItem("safesign-language", language);
+}, [language]);
   const copy = t(language);
 
   const direction =
