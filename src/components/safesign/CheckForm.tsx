@@ -1,3 +1,4 @@
+
 import { useEffect, useState, type FormEvent } from "react";
 import {
   ArrowRight,
@@ -5,6 +6,8 @@ import {
   Loader2,
   Search,
   ShieldCheck,
+  Fingerprint,
+  ScanSearch,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -29,125 +32,23 @@ const NETWORKS = [
 ];
 
 const HASH_REGEX = /^0x[a-fA-F0-9]{64}$/;
-
 const ADDRESS_REGEX = /^0x[a-fA-F0-9]{40}$/;
 
 type CheckMode = "verify" | "match" | "token";
-
-type FormCopy = {
-  verifyTitle: string;
-  verifyDescription: string;
-  matchTitle: string;
-  matchDescription: string;
-  tokenTitle: string;
-  tokenDescription: string;
-  transactionHash: string;
-  network: string;
-  amount: string;
-  recipient: string;
-  assetType: string;
-  nativeAsset: string;
-  tokenAsset: string;
-  tokenContract: string;
-  enterToken: string;
-  checkTransaction: string;
-  comparePayment: string;
-  checkToken: string;
-  invalidHash: string;
-  invalidAddress: string;
-  invalidAmount: string;
-  required: string;
-  nativeHelp: string;
-  tokenHelp: string;
-  checking: string;
-  networkError: string;
-  transactionPlaceholder: string;
-  recipientPlaceholder: string;
-  amountPlaceholder: string;
-};
-
-const extraCopy: Record<"en" | "pcm", FormCopy> = {
-  en: {
-    verifyTitle: "Verify a transaction",
-    verifyDescription:
-      "Check whether a blockchain transaction exists and inspect its on-chain details.",
-    matchTitle: "Match a payment",
-    matchDescription:
-      "Compare a transaction against the payment details you expected to receive.",
-    tokenTitle: "Check token security",
-    tokenDescription:
-      "Inspect a token contract for available security risks and warning indicators.",
-    transactionHash: "Transaction hash",
-    network: "Blockchain network",
-    amount: "Expected amount",
-    recipient: "Expected recipient wallet",
-    assetType: "Asset type",
-    nativeAsset: "Native coin",
-    tokenAsset: "ERC-20 token",
-    tokenContract: "Token contract address",
-    enterToken: "Enter the token contract address",
-    checkTransaction: "Verify transaction",
-    comparePayment: "Compare payment",
-    checkToken: "Check token security",
-    invalidHash: "Enter a valid transaction hash.",
-    invalidAddress: "Enter a valid wallet or token contract address.",
-    invalidAmount: "Enter a valid amount greater than zero.",
-    required: "Complete all required fields.",
-    nativeHelp:
-      "Choose native coin for the network's main currency, such as ETH, POL or ARB.",
-    tokenHelp:
-      "For an ERC-20 payment, enter the actual token contract address.",
-    checking: "Checking...",
-    networkError: "The request could not be completed. Please try again.",
-    transactionPlaceholder: "0x...",
-    recipientPlaceholder: "0x...",
-    amountPlaceholder: "e.g. 25.50",
-  },
-
-  pcm: {
-    verifyTitle: "Verify transaction",
-    verifyDescription:
-      "Check whether transaction dey blockchain and see the details.",
-    matchTitle: "Match payment",
-    matchDescription:
-      "Compare the transaction with the payment wey you expect.",
-    tokenTitle: "Check token security",
-    tokenDescription:
-      "Check token contract for security risks and warning signs.",
-    transactionHash: "Transaction hash",
-    network: "Blockchain network",
-    amount: "Expected amount",
-    recipient: "Expected receiver wallet",
-    assetType: "Asset type",
-    nativeAsset: "Native coin",
-    tokenAsset: "ERC-20 token",
-    tokenContract: "Token contract address",
-    enterToken: "Enter token contract address",
-    checkTransaction: "Verify transaction",
-    comparePayment: "Compare payment",
-    checkToken: "Check token security",
-    invalidHash: "Enter correct transaction hash.",
-    invalidAddress: "Enter correct wallet or token contract address.",
-    invalidAmount: "Enter correct amount wey pass zero.",
-    required: "Fill all the required fields.",
-    nativeHelp: "Choose native coin like ETH, POL or ARB.",
-    tokenHelp:
-      "For ERC-20 payment, enter the real token contract address.",
-    checking: "Dey check...",
-    networkError: "The request no go through. Abeg try again.",
-    transactionPlaceholder: "0x...",
-    recipientPlaceholder: "0x...",
-    amountPlaceholder: "e.g. 25.50",
-  },
-};
 
 interface CheckFormProps {
   language: Language;
 }
 
+const fieldClass =
+  "h-12 w-full rounded-lg border border-white/10 bg-[#080e0b] px-3 text-sm text-gray-100 outline-none transition placeholder:text-gray-600 hover:border-emerald-500/30 focus:border-emerald-400/70 focus:ring-2 focus:ring-emerald-500/10";
+
+const labelClass =
+  "mb-2 block text-xs font-semibold tracking-wide text-gray-300";
+
 export default function CheckForm({ language }: CheckFormProps) {
   const messages = t(language);
-  const extra = t(language);
+  const extra = messages;
 
   const [mode, setMode] = useState<CheckMode>("verify");
   const [network, setNetwork] = useState("base");
@@ -158,7 +59,6 @@ export default function CheckForm({ language }: CheckFormProps) {
 
   const [assetType, setAssetType] = useState<"native" | "token">("native");
   const [expectedTokenAddress, setExpectedTokenAddress] = useState("");
-
   const [tokenAddress, setTokenAddress] = useState("");
 
   const [result, setResult] = useState<Record<string, unknown> | null>(null);
@@ -166,59 +66,58 @@ export default function CheckForm({ language }: CheckFormProps) {
 
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-
   const [draftLoaded, setDraftLoaded] = useState(false);
 
-useEffect(() => {
-  try {
-    const savedDraft = localStorage.getItem("safesign-form-draft");
+  useEffect(() => {
+    try {
+      const savedDraft = localStorage.getItem("safesign-form-draft");
 
-    if (savedDraft) {
-      const draft = JSON.parse(savedDraft);
+      if (savedDraft) {
+        const draft = JSON.parse(savedDraft);
 
-      setMode(draft.mode ?? "verify");
-      setNetwork(draft.network ?? "base");
-      setTransactionHash(draft.transactionHash ?? "");
-      setExpectedAmount(draft.expectedAmount ?? "");
-      setExpectedRecipient(draft.expectedRecipient ?? "");
-      setAssetType(draft.assetType ?? "native");
-      setExpectedTokenAddress(draft.expectedTokenAddress ?? "");
-      setTokenAddress(draft.tokenAddress ?? "");
+        setMode(draft.mode ?? "verify");
+        setNetwork(draft.network ?? "base");
+        setTransactionHash(draft.transactionHash ?? "");
+        setExpectedAmount(draft.expectedAmount ?? "");
+        setExpectedRecipient(draft.expectedRecipient ?? "");
+        setAssetType(draft.assetType ?? "native");
+        setExpectedTokenAddress(draft.expectedTokenAddress ?? "");
+        setTokenAddress(draft.tokenAddress ?? "");
+      }
+    } catch {
+      localStorage.removeItem("safesign-form-draft");
     }
-  } catch {
-    localStorage.removeItem("safesign-form-draft");
-  }
 
-  setDraftLoaded(true);
-}, []);
+    setDraftLoaded(true);
+  }, []);
 
-useEffect(() => {
-  if (!draftLoaded) return;
+  useEffect(() => {
+    if (!draftLoaded) return;
 
-  localStorage.setItem(
-    "safesign-form-draft",
-    JSON.stringify({
-      mode,
-      network,
-      transactionHash,
-      expectedAmount,
-      expectedRecipient,
-      assetType,
-      expectedTokenAddress,
-      tokenAddress,
-    }),
-  );
-}, [
-  draftLoaded,
-  mode,
-  network,
-  transactionHash,
-  expectedAmount,
-  expectedRecipient,
-  assetType,
-  expectedTokenAddress,
-  tokenAddress,
-]);
+    localStorage.setItem(
+      "safesign-form-draft",
+      JSON.stringify({
+        mode,
+        network,
+        transactionHash,
+        expectedAmount,
+        expectedRecipient,
+        assetType,
+        expectedTokenAddress,
+        tokenAddress,
+      }),
+    );
+  }, [
+    draftLoaded,
+    mode,
+    network,
+    transactionHash,
+    expectedAmount,
+    expectedRecipient,
+    assetType,
+    expectedTokenAddress,
+    tokenAddress,
+  ]);
 
   function resetResult() {
     setResult(null);
@@ -236,6 +135,7 @@ useEffect(() => {
   }
 
   function changeMode(nextMode: CheckMode) {
+    if (loading) return;
     setMode(nextMode);
     resetForm();
   }
@@ -358,38 +258,41 @@ useEffect(() => {
       }
 
       setResult(data);
-setResultMode(mode);
+      setResultMode(mode);
 
-const searchText = [
-  network,
-  transactionHash,
-  expectedRecipient,
-  expectedTokenAddress,
-  tokenAddress,
-  mode,
-]
-  .filter(Boolean)
-  .join(" ")
-  .toLowerCase();
+      const searchText = [
+        network,
+        transactionHash,
+        expectedRecipient,
+        expectedTokenAddress,
+        tokenAddress,
+        mode,
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
 
-const savedReport = {
-  id: crypto.randomUUID(),
-  mode,
-  network,
-  title:
-    mode === "verify"
-      ? "Transaction verification"
-      : mode === "match"
-        ? "Payment comparison"
-        : "Token security check",
-  searchText,
-  createdAt: new Date().toISOString(),
-  response: data,
-};
+      const savedReport = {
+        id: crypto.randomUUID(),
+        mode,
+        network,
+        title:
+          mode === "verify"
+            ? "Transaction verification"
+            : mode === "match"
+              ? "Payment comparison"
+              : "Token security check",
+        searchText,
+        createdAt: new Date().toISOString(),
+        response: data,
+      };
 
-void saveReport(savedReport).catch((storageError) => {
-  console.error("SafeSign could not save this report locally:", storageError);
-});
+      void saveReport(savedReport).catch((storageError) => {
+        console.error(
+          "SafeSign could not save this report locally:",
+          storageError,
+        );
+      });
     } catch (requestError) {
       setError(
         requestError instanceof Error
@@ -404,16 +307,33 @@ void saveReport(savedReport).catch((storageError) => {
   const modeOptions: {
     value: CheckMode;
     label: string;
+    description: string;
     icon: typeof Search;
   }[] = [
-    { value: "verify", label: messages.transaction, icon: Search },
-    { value: "match", label: messages.payment, icon: CheckCircle2 },
-    { value: "token", label: messages.token, icon: ShieldCheck },
+    {
+      value: "verify",
+      label: messages.transaction,
+      description: "Inspect transaction",
+      icon: Search,
+    },
+    {
+      value: "match",
+      label: messages.payment,
+      description: "Compare payment",
+      icon: CheckCircle2,
+    },
+    {
+      value: "token",
+      label: messages.token,
+      description: "Inspect contract",
+      icon: ShieldCheck,
+    },
   ];
 
   return (
-    <section className="max-w-3xl mx-auto w-full">
-      <div className="bg-card border border-border gap-2 grid grid-cols-3 mb-6 p-2 rounded-xl">
+    <section className="mx-auto w-full">
+      {/* Mode selector */}
+      <div className="mb-6 grid grid-cols-3 gap-2 rounded-xl border border-white/[0.07] bg-black/30 p-1.5">
         {modeOptions.map((option) => {
           const Icon = option.icon;
           const active = mode === option.value;
@@ -423,38 +343,65 @@ void saveReport(savedReport).catch((storageError) => {
               key={option.value}
               type="button"
               onClick={() => changeMode(option.value)}
+              disabled={loading}
               aria-pressed={active}
-              className={`flex min-h-12 items-center justify-center gap-2 rounded-lg px-2 py-3 text-sm font-medium transition ${
+              className={`group flex min-h-[76px] flex-col items-center justify-center gap-1.5 rounded-lg px-1.5 py-3 text-center transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-60 sm:flex-row sm:gap-2 sm:px-3 ${
                 active
-                  ? "bg-primary text-primary-foreground shadow-sm"
-                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                  ? "border border-emerald-400/30 bg-emerald-500/10 text-emerald-300 shadow-[inset_0_0_20px_rgba(16,185,129,0.04)]"
+                  : "border border-transparent text-gray-500 hover:bg-white/[0.035] hover:text-gray-200"
               }`}
             >
-              <Icon className="h-4 shrink-0 w-4" />
-              <span>{option.label}</span>
+              <Icon
+                className={`size-4 shrink-0 ${
+                  active ? "text-emerald-400" : ""
+                }`}
+              />
+
+              <span className="min-w-0">
+                <span className="block text-[11px] font-bold sm:text-xs">
+                  {option.label}
+                </span>
+                <span className="mt-0.5 hidden text-[9px] text-gray-500 sm:block">
+                  {option.description}
+                </span>
+              </span>
             </button>
           );
         })}
       </div>
 
-      <div className="bg-card border border-border p-5 rounded-2xl shadow-sm sm:p-7">
-        <div className="mb-6">
-          <div className="flex gap-2 items-center mb-2 text-primary">
-            <ShieldCheck className="h-5 w-5" />
-            <span className="font-semibold text-xs tracking-wider uppercase">
-              SafeSign
+      {/* Form heading */}
+      <div className="mb-6 flex items-start gap-3">
+        <div className="flex size-11 shrink-0 items-center justify-center rounded-xl border border-emerald-500/20 bg-emerald-500/[0.08] text-emerald-400">
+          {mode === "verify" ? (
+            <ScanSearch className="size-5" />
+          ) : mode === "match" ? (
+            <Fingerprint className="size-5" />
+          ) : (
+            <ShieldCheck className="size-5" />
+          )}
+        </div>
+
+        <div className="min-w-0">
+          <div className="mb-1 flex flex-wrap items-center gap-2">
+            <h2 className="text-lg font-bold tracking-tight text-white sm:text-xl">
+              {mode === "verify"
+                ? extra.verifyTitle
+                : mode === "match"
+                  ? extra.matchTitle
+                  : extra.tokenTitle}
+            </h2>
+
+            <span className="rounded border border-emerald-500/20 bg-emerald-500/[0.07] px-2 py-0.5 text-[8px] font-bold uppercase tracking-widest text-emerald-400">
+              {mode === "verify"
+                ? "01 / VERIFY"
+                : mode === "match"
+                  ? "02 / MATCH"
+                  : "03 / TOKEN"}
             </span>
           </div>
 
-          <h2 className="font-bold sm:text-2xl text-xl">
-            {mode === "verify"
-              ? extra.verifyTitle
-              : mode === "match"
-                ? extra.matchTitle
-                : extra.tokenTitle}
-          </h2>
-
-          <p className="leading-6 mt-2 text-muted-foreground text-sm">
+          <p className="text-xs leading-6 text-gray-500 sm:text-sm">
             {mode === "verify"
               ? extra.verifyDescription
               : mode === "match"
@@ -462,44 +409,74 @@ void saveReport(savedReport).catch((storageError) => {
                 : extra.tokenDescription}
           </p>
         </div>
+      </div>
 
-        <form onSubmit={handleSubmit} className="space-y-5">
+      {/* Verification form */}
+      <form onSubmit={handleSubmit} className="space-y-5">
+        {/* Network */}
+        <div>
+          <label htmlFor="safesign-network" className={labelClass}>
+            {extra.network}
+          </label>
+
+          <select
+            id="safesign-network"
+            value={network}
+            onChange={(event) => {
+              setNetwork(event.target.value);
+              resetResult();
+            }}
+            className={fieldClass}
+          >
+            {NETWORKS.map((item) => (
+              <option
+                key={item.value}
+                value={item.value}
+                className="bg-[#0b110e]"
+              >
+                {item.label}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Transaction verification */}
+        {mode === "verify" && (
           <div>
-            <label
-              htmlFor="safesign-network"
-              className="block font-medium mb-2 text-sm"
-            >
-              {extra.network}
+            <label htmlFor="safesign-verify-hash" className={labelClass}>
+              {extra.transactionHash}
             </label>
 
-            <select
-              id="safesign-network"
-              value={network}
+            <input
+              id="safesign-verify-hash"
+              value={transactionHash}
               onChange={(event) => {
-                setNetwork(event.target.value);
+                setTransactionHash(event.target.value);
                 resetResult();
               }}
-              className="bg-background border border-border focus:border-primary focus:ring-2 focus:ring-primary/20 h-12 outline-none px-3 rounded-lg text-sm w-full"
-            >
-              {NETWORKS.map((item) => (
-                <option key={item.value} value={item.value}>
-                  {item.label}
-                </option>
-              ))}
-            </select>
-          </div>
+              placeholder={extra.transactionPlaceholder}
+              autoCapitalize="off"
+              autoComplete="off"
+              spellCheck={false}
+              className={`${fieldClass} font-mono`}
+            />
 
-          {mode === "verify" && (
+            <p className="mt-2 text-[10px] text-gray-600">
+              Enter the transaction hash from the selected blockchain.
+            </p>
+          </div>
+        )}
+
+        {/* Payment matching */}
+        {mode === "match" && (
+          <>
             <div>
-              <label
-                htmlFor="safesign-verify-hash"
-                className="block font-medium mb-2 text-sm"
-              >
+              <label htmlFor="safesign-match-hash" className={labelClass}>
                 {extra.transactionHash}
               </label>
 
               <input
-                id="safesign-verify-hash"
+                id="safesign-match-hash"
                 value={transactionHash}
                 onChange={(event) => {
                   setTransactionHash(event.target.value);
@@ -509,198 +486,185 @@ void saveReport(savedReport).catch((storageError) => {
                 autoCapitalize="off"
                 autoComplete="off"
                 spellCheck={false}
-                className="bg-background border border-border focus:border-primary focus:ring-2 focus:ring-primary/20 font-mono h-12 outline-none px-3 rounded-lg text-sm w-full"
+                className={`${fieldClass} font-mono`}
               />
             </div>
-          )}
 
-          {mode === "match" && (
-            <>
-              <div>
-                <label
-                  htmlFor="safesign-match-hash"
-                  className="block font-medium mb-2 text-sm"
-                >
-                  {extra.transactionHash}
-                </label>
-
-                <input
-                  id="safesign-match-hash"
-                  value={transactionHash}
-                  onChange={(event) => {
-                    setTransactionHash(event.target.value);
-                    resetResult();
-                  }}
-                  placeholder={extra.transactionPlaceholder}
-                  autoCapitalize="off"
-                  autoComplete="off"
-                  spellCheck={false}
-                  className="bg-background border border-border focus:border-primary focus:ring-2 focus:ring-primary/20 font-mono h-12 outline-none px-3 rounded-lg text-sm w-full"
-                />
-              </div>
-
-              <div>
-                <label
-                  htmlFor="safesign-expected-amount"
-                  className="block font-medium mb-2 text-sm"
-                >
-                  {extra.amount}
-                </label>
-
-                <input
-                  id="safesign-expected-amount"
-                  value={expectedAmount}
-                  onChange={(event) => {
-                    setExpectedAmount(event.target.value);
-                    resetResult();
-                  }}
-                  placeholder={extra.amountPlaceholder}
-                  inputMode="decimal"
-                  className="bg-background border border-border focus:border-primary focus:ring-2 focus:ring-primary/20 h-12 outline-none px-3 rounded-lg text-sm w-full"
-                />
-              </div>
-
-              <div>
-                <label
-                  htmlFor="safesign-expected-recipient"
-                  className="block font-medium mb-2 text-sm"
-                >
-                  {extra.recipient}
-                </label>
-
-                <input
-                  id="safesign-expected-recipient"
-                  value={expectedRecipient}
-                  onChange={(event) => {
-                    setExpectedRecipient(event.target.value);
-                    resetResult();
-                  }}
-                  placeholder={extra.recipientPlaceholder}
-                  autoCapitalize="off"
-                  autoComplete="off"
-                  spellCheck={false}
-                  className="bg-background border border-border focus:border-primary focus:ring-2 focus:ring-primary/20 font-mono h-12 outline-none px-3 rounded-lg text-sm w-full"
-                />
-              </div>
-
-              <div>
-                <label
-                  htmlFor="safesign-asset-type"
-                  className="block font-medium mb-2 text-sm"
-                >
-                  {extra.assetType}
-                </label>
-
-                <select
-                  id="safesign-asset-type"
-                  value={assetType}
-                  onChange={(event) => {
-                    setAssetType(
-                      event.target.value as "native" | "token",
-                    );
-                    setExpectedTokenAddress("");
-                    resetResult();
-                  }}
-                  className="bg-background border border-border focus:border-primary focus:ring-2 focus:ring-primary/20 h-12 outline-none px-3 rounded-lg text-sm w-full"
-                >
-                  <option value="native">{extra.nativeAsset}</option>
-                  <option value="token">{extra.tokenAsset}</option>
-                </select>
-
-                <p className="mt-2 text-muted-foreground text-xs">
-                  {assetType === "native"
-                    ? extra.nativeHelp
-                    : extra.tokenHelp}
-                </p>
-              </div>
-
-              {assetType === "token" && (
-                <div>
-                  <label
-                    htmlFor="safesign-expected-token"
-                    className="block font-medium mb-2 text-sm"
-                  >
-                    {extra.tokenContract}
-                  </label>
-
-                  <input
-                    id="safesign-expected-token"
-                    value={expectedTokenAddress}
-                    onChange={(event) => {
-                      setExpectedTokenAddress(event.target.value);
-                      resetResult();
-                    }}
-                    placeholder={extra.enterToken}
-                    autoCapitalize="off"
-                    autoComplete="off"
-                    spellCheck={false}
-                    className="bg-background border border-border focus:border-primary focus:ring-2 focus:ring-primary/20 font-mono h-12 outline-none px-3 rounded-lg text-sm w-full"
-                  />
-                </div>
-              )}
-            </>
-          )}
-
-          {mode === "token" && (
             <div>
-              <label
-                htmlFor="safesign-token-address"
-                className="block font-medium mb-2 text-sm"
-              >
-                {extra.tokenContract}
+              <label htmlFor="safesign-expected-amount" className={labelClass}>
+                {extra.amount}
               </label>
 
               <input
-                id="safesign-token-address"
-                value={tokenAddress}
+                id="safesign-expected-amount"
+                value={expectedAmount}
                 onChange={(event) => {
-                  setTokenAddress(event.target.value);
+                  setExpectedAmount(event.target.value);
                   resetResult();
                 }}
-                placeholder={extra.enterToken}
+                placeholder={extra.amountPlaceholder}
+                inputMode="decimal"
+                className={fieldClass}
+              />
+            </div>
+
+            <div>
+              <label
+                htmlFor="safesign-expected-recipient"
+                className={labelClass}
+              >
+                {extra.recipient}
+              </label>
+
+              <input
+                id="safesign-expected-recipient"
+                value={expectedRecipient}
+                onChange={(event) => {
+                  setExpectedRecipient(event.target.value);
+                  resetResult();
+                }}
+                placeholder={extra.recipientPlaceholder}
                 autoCapitalize="off"
                 autoComplete="off"
                 spellCheck={false}
-                className="bg-background border border-border focus:border-primary focus:ring-2 focus:ring-primary/20 font-mono h-12 outline-none px-3 rounded-lg text-sm w-full"
+                className={`${fieldClass} font-mono`}
               />
             </div>
-          )}
 
-          {error && (
-            <div
-              role="alert"
-              className="bg-destructive/5 border border-destructive/30 px-4 py-3 rounded-lg text-destructive text-sm"
-            >
-              {error}
+            <div>
+              <label htmlFor="safesign-asset-type" className={labelClass}>
+                {extra.assetType}
+              </label>
+
+              <select
+                id="safesign-asset-type"
+                value={assetType}
+                onChange={(event) => {
+                  setAssetType(
+                    event.target.value as "native" | "token",
+                  );
+                  setExpectedTokenAddress("");
+                  resetResult();
+                }}
+                className={fieldClass}
+              >
+                <option value="native" className="bg-[#0b110e]">
+                  {extra.nativeAsset}
+                </option>
+                <option value="token" className="bg-[#0b110e]">
+                  {extra.tokenAsset}
+                </option>
+              </select>
+
+              <p className="mt-2 rounded-lg border border-white/[0.05] bg-white/[0.02] px-3 py-2.5 text-[10px] leading-5 text-gray-500">
+                {assetType === "native"
+                  ? extra.nativeHelp
+                  : extra.tokenHelp}
+              </p>
             </div>
-          )}
 
-          <Button
-            type="submit"
-            disabled={loading}
-            className="font-semibold gap-2 h-12 text-sm w-full"
-          >
-            {loading ? (
-              <>
-                <Loader2 className="animate-spin h-4 w-4" />
-                {extra.checking}
-              </>
-            ) : (
-              <>
-                {mode === "verify"
-                  ? extra.checkTransaction
-                  : mode === "match"
-                    ? extra.comparePayment
-                    : extra.checkToken}
-                <ArrowRight className="h-4 w-4" />
-              </>
+            {assetType === "token" && (
+              <div>
+                <label
+                  htmlFor="safesign-expected-token"
+                  className={labelClass}
+                >
+                  {extra.tokenContract}
+                </label>
+
+                <input
+                  id="safesign-expected-token"
+                  value={expectedTokenAddress}
+                  onChange={(event) => {
+                    setExpectedTokenAddress(event.target.value);
+                    resetResult();
+                  }}
+                  placeholder={extra.enterToken}
+                  autoCapitalize="off"
+                  autoComplete="off"
+                  spellCheck={false}
+                  className={`${fieldClass} font-mono`}
+                />
+              </div>
             )}
-          </Button>
-        </form>
-      </div>
+          </>
+        )}
 
+        {/* Token security */}
+        {mode === "token" && (
+          <div>
+            <label
+              htmlFor="safesign-token-address"
+              className={labelClass}
+            >
+              {extra.tokenContract}
+            </label>
+
+            <input
+              id="safesign-token-address"
+              value={tokenAddress}
+              onChange={(event) => {
+                setTokenAddress(event.target.value);
+                resetResult();
+              }}
+              placeholder={extra.enterToken}
+              autoCapitalize="off"
+              autoComplete="off"
+              spellCheck={false}
+              className={`${fieldClass} font-mono`}
+            />
+
+            <p className="mt-2 text-[10px] leading-5 text-gray-600">
+              Submit the actual contract address, not just the token name or symbol.
+            </p>
+          </div>
+        )}
+
+        {/* Error message */}
+        {error && (
+          <div
+            role="alert"
+            className="flex items-start gap-3 rounded-lg border border-red-500/25 bg-red-500/[0.07] px-4 py-3 text-sm text-red-300"
+          >
+            <ShieldCheck className="mt-0.5 size-4 shrink-0 text-red-400" />
+            <span>{error}</span>
+          </div>
+        )}
+
+        {/* Submit */}
+        <Button
+          type="submit"
+          disabled={loading}
+          className="group h-12 w-full gap-2 rounded-lg border border-emerald-400/30 bg-emerald-500 font-bold text-[#041109] shadow-[0_0_25px_rgba(16,185,129,0.10)] transition-all hover:bg-emerald-400 hover:shadow-[0_0_30px_rgba(16,185,129,0.20)] disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {loading ? (
+            <>
+              <Loader2 className="size-4 animate-spin" />
+              {extra.checking}
+            </>
+          ) : (
+            <>
+              {mode === "verify"
+                ? extra.checkTransaction
+                : mode === "match"
+                  ? extra.comparePayment
+                  : extra.checkToken}
+              <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" />
+            </>
+          )}
+        </Button>
+
+        <div className="flex items-center justify-center gap-2 pb-1 text-center">
+          <ShieldCheck className="size-3 text-emerald-500/60" />
+          <p className="text-[9px] font-medium uppercase tracking-[0.14em] text-gray-600">
+            Blockchain data verification · Check before you trust
+          </p>
+        </div>
+      </form>
+
+      {/* Results */}
       {result && (
-        <div className="mt-6">
+        <div className="mt-7 border-t border-emerald-500/15 pt-6">
           <CheckResult
             response={result}
             mode={resultMode}
@@ -711,3 +675,4 @@ void saveReport(savedReport).catch((storageError) => {
     </section>
   );
 }
+    
