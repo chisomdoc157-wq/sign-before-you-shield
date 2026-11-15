@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { BrandHeader } from "@/components/safesign/BrandHeader";
 import CheckForm from "@/components/safesign/CheckForm";
@@ -85,6 +85,14 @@ useEffect(() => {
 
             <div className="mt-9 sm:mt-11">
               <CheckForm language={language} />
+            </div>
+            <div className="mt-6 text-center">
+              <Link
+               to="/history"
+               className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline"
+              >
+               View saved history →
+             </Link>
             </div>
           </section>
         </main>
