@@ -1,223 +1,590 @@
 import {
   AlertTriangle,
-  ArrowDownLeft,
-  ArrowUpRight,
-  Check,
-  CircleAlert,
+  CheckCircle2,
   Clock3,
-  ExternalLink,
-  Fuel,
-  LoaderCircle,
+  Copy,
+  FileSearch,
+  Printer,
+  ShieldAlert,
   ShieldCheck,
-  X,
+  XCircle,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import type { CheckResult as CheckResultData } from "./api.js";
-import type { TransactionReport } from "@/lib/types";
 import type { Language } from "./language";
 
-const resultCopy = {
-  en: {
-    safe: "Looks safe",
-    risky: "Use caution",
-    block: "High risk",
-    score: "Risk score",
-    scoreHelp: "Higher means more warning signs.",
-    demo: "Mock screening",
-    checkAnother: "Check another",
-    reportTitle: "Transaction Verification Report",
-    notFound: "This transaction isn’t on the selected network.",
-    reportError: "Couldn’t load transaction details. Try another network or try again.",
-    reportLoading: "Loading transaction details…",
-    network: "Network",
-    status: "Status",
-    success: "Confirmed",
-    failed: "Failed",
-    pending: "Pending",
-    from: "From",
-    to: "To",
-    contractCreation: "Contract creation",
-    value: "Amount",
-    gas: "Gas used",
-    blockNumber: "Block",
-    time: "Time",
-    noTimestamp: "Not confirmed yet",
-    chainData: "Transaction details come from the selected public blockchain network.",
-  },
-  pcm: {
-    safe: "E look safe",
-    risky: "Take am easy",
-    block: "Risk dey high",
-    score: "Risk score",
-    scoreHelp: "Higher score mean say warning signs plenty.",
-    demo: "Mock check",
-    checkAnother: "Check another one",
-    reportTitle: "Transaction Verification Report",
-    notFound: "We no see this transaction for the network wey you choose.",
-    reportError: "We no fit load transaction details. Try another network or try again.",
-    reportLoading: "We dey load transaction details…",
-    network: "Network",
-    status: "Status",
-    success: "Confirmed",
-    failed: "Failed",
-    pending: "Pending",
-    from: "From",
-    to: "To",
-    contractCreation: "Contract creation",
-    value: "Amount",
-    gas: "Gas used",
-    blockNumber: "Block",
-    time: "Time",
-    noTimestamp: "Dem never confirm am",
-    chainData: "Transaction details come from the public blockchain network wey you choose.",
-  },
-} as const;
+type CheckMode = "verify" | "match" | "token";
 
-interface CheckResultCardProps {
-  result: CheckResultData;
+interface CheckResultProps {
+  response: Record<string, unknown>;
+  mode: CheckMode;
   language: Language;
-  onCheckAnother: () => void;
 }
 
-export function CheckResultCard({ result, language, onCheckAnother }: CheckResultCardProps) {
-  const copy = resultCopy[language];
-  const tone = {
-    safe: { icon: ShieldCheck, banner: "border-primary/40 bg-primary/10 text-primary", bar: "bg-primary" },
-    risky: { icon: AlertTriangle, banner: "border-warning/40 bg-warning/10 text-warning", bar: "bg-warning" },
-    block: { icon: CircleAlert, banner: "border-destructive/40 bg-destructive/10 text-destructive", bar: "bg-destructive" },
-  }[result.verdict];
-  const VerdictIcon = tone.icon;
+const resultCopy: Record<
+  "en" | "pcm",
+  {
+    result: string;
+    status: string;
+    transaction: string;
+    token: string;
+    payment: string;
+    details: string;
+    rawResponse: string;
+    copy: string;
+    copied: string;
+    print: string;
+    matched: string;
+    mismatched: string;
+    pending: string;
+    confirming: string;
+    notFound: string;
+    unverifiable: string;
+    trusted: string;
+    unverified: string;
+    riskDetected: string;
+    noRiskFlags: string;
+    partialData: string;
+    noData: string;
+    success: string;
+    failed: string;
+    unknown: string;
+    yes: string;
+    no: string;
+  }
+> = {
+  en: {
+    result: "Check result",
+    status: "Status",
+    transaction: "Transaction details",
+    token: "Token security details",
+    payment: "Payment comparison",
+    details: "Report details",
+    rawResponse: "Full API response",
+    copy: "Copy report",
+    copied: "Copied",
+    print: "Print report",
+    matched: "Payment matched",
+    mismatched: "Payment mismatched",
+    pending: "Pending",
+    confirming: "Confirming",
+    notFound: "Not found",
+    unverifiable: "Unverifiable",
+    trusted: "Trusted",
+    unverified: "Unverified",
+    riskDetected: "Risk detected",
+    noRiskFlags: "No risk flags returned",
+    partialData: "Partial data",
+    noData: "No data available",
+    success: "Successful",
+    failed: "Failed",
+    unknown: "Unknown",
+    yes: "Yes",
+    no: "No",
+  },
+  pcm: {
+    result: "Check result",
+    status: "Status",
+    transaction: "Transaction details",
+    token: "Token security details",
+    payment: "Payment comparison",
+    details: "Report details",
+    rawResponse: "Full API response",
+    copy: "Copy report",
+    copied: "Don copy",
+    print: "Print report",
+    matched: "Payment match",
+    mismatched: "Payment no match",
+    pending: "Pending",
+    confirming: "Dey confirm",
+    notFound: "No find am",
+    unverifiable: "No fit verify",
+    trusted: "Trusted",
+    unverified: "Never verify",
+    riskDetected: "Risk dey",
+    noRiskFlags: "No risk flags return",
+    partialData: "Partial data",
+    noData: "No data",
+    success: "Successful",
+    failed: "Failed",
+    unknown: "Unknown",
+    yes: "Yes",
+    no: "No",
+  },
+};
+
+function isObject(value: unknown): value is Record<string, unknown> {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    !Array.isArray(value)
+  );
+}
+
+function humanize(value: string) {
+  return value
+    .replace(/([a-z])([A-Z])/g, "$1 $2")
+    .replace(/[_-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+function displayValue(value: unknown): string {
+  if (value === null || value === undefined || value === "") {
+    return "—";
+  }
+
+  if (typeof value === "boolean") {
+    return value ? "Yes" : "No";
+  }
+
+  if (typeof value === "object") {
+    return JSON.stringify(value, null, 2);
+  }
+
+  return String(value);
+}
+
+function getStatus(response: Record<string, unknown>) {
+  const report = isObject(response.report) ? response.report : {};
+  const result = isObject(response.result) ? response.result : {};
+
+  const candidates = [
+    response.result,
+    response.status,
+    result.status,
+    result.matchStatus,
+    report.status,
+    report.trustStatus,
+    report.transactionStatus,
+    report.executionStatus,
+  ];
+
+  for (const candidate of candidates) {
+    if (typeof candidate === "string" && candidate.trim()) {
+      return candidate.toUpperCase().replace(/[\s-]+/g, "_");
+    }
+  }
+
+  if (response.success === true) return "SUCCESS";
+  if (response.success === false) return "FAILED";
+
+  return "UNKNOWN";
+}
+
+function getStatusLabel(status: string, copy: (typeof resultCopy)["en"]) {
+  const labels: Record<string, string> = {
+    MATCHED: copy.matched,
+    MISMATCHED: copy.mismatched,
+    PENDING: copy.pending,
+    CONFIRMING: copy.confirming,
+    NOT_FOUND: copy.notFound,
+    UNVERIFIABLE: copy.unverifiable,
+    TRUSTED: copy.trusted,
+    UNVERIFIED: copy.unverified,
+    RISK_DETECTED: copy.riskDetected,
+    HIGH_RISK: copy.riskDetected,
+    NO_RISK_FLAGS_RETURNED: copy.noRiskFlags,
+    PARTIAL_DATA: copy.partialData,
+    NO_DATA: copy.noData,
+    SUCCESS: copy.success,
+    SUCCESSFUL: copy.success,
+    FAILED: copy.failed,
+    UNKNOWN: copy.unknown,
+  };
+
+  return labels[status] || humanize(status);
+}
+
+function getStatusStyle(status: string) {
+  const goodStatuses = [
+    "MATCHED",
+    "SUCCESS",
+    "SUCCESSFUL",
+    "TRUSTED",
+    "CONFIRMED",
+  ];
+
+  const badStatuses = [
+    "MISMATCHED",
+    "FAILED",
+    "RISK_DETECTED",
+    "HIGH_RISK",
+    "UNTRUSTED",
+  ];
+
+  if (goodStatuses.includes(status)) {
+    return {
+      className:
+        "border-green-500/30 bg-green-500/10 text-green-700 dark:text-green-400",
+      icon: CheckCircle2,
+    };
+  }
+
+  if (badStatuses.includes(status)) {
+    return {
+      className:
+        "border-destructive/30 bg-destructive/10 text-destructive",
+      icon: XCircle,
+    };
+  }
+
+  if (
+    status === "PENDING" ||
+    status === "CONFIRMING" ||
+    status === "NO_RISK_FLAGS_RETURNED" ||
+    status === "PARTIAL_DATA" ||
+    status === "NO_DATA" ||
+    status === "UNVERIFIABLE" ||
+    status === "UNVERIFIED"
+  ) {
+    return {
+      className:
+        "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-400",
+      icon: AlertTriangle,
+    };
+  }
+
+  return {
+    className: "border-border bg-muted text-muted-foreground",
+    icon: Clock3,
+  };
+}
+
+const OMIT_KEYS = new Set([
+  "success",
+  "message",
+  "report",
+  "result",
+  "comparison",
+  "token",
+  "riskFlags",
+  "securityData",
+  "transfers",
+  "logs",
+  "raw",
+]);
+
+function FieldList({
+  data,
+  omit = new Set<string>(),
+}: {
+  data: Record<string, unknown>;
+  omit?: Set<string>;
+}) {
+  const entries = Object.entries(data).filter(
+    ([key, value]) =>
+      !omit.has(key) &&
+      value !== undefined &&
+      value !== null &&
+      !Array.isArray(value) &&
+      typeof value !== "object",
+  );
+
+  if (entries.length === 0) return null;
 
   return (
-    <section aria-labelledby="safesign-result-title" className="mt-6 space-y-5" aria-live="polite">
-      <div className={`flex items-center gap-3 rounded-lg border px-4 py-4 sm:px-5 ${tone.banner}`}>
-        <VerdictIcon aria-hidden="true" className="size-8 shrink-0" />
-        <div className="min-w-0 flex-1">
-          <h2 className="font-display text-xl font-semibold" id="safesign-result-title">
-            {copy[result.verdict]}
-          </h2>
-          <p className="mt-1 text-xs font-medium opacity-80">{copy.demo}</p>
-        </div>
-        <span className="shrink-0 text-2xl font-semibold tabular-nums">{result.score}</span>
-      </div>
-
-      <div className="space-y-2">
-        <div className="flex items-center justify-between gap-3 text-sm">
-          <span className="font-medium">{copy.score}</span>
-          <span className="text-muted-foreground">{copy.scoreHelp}</span>
-        </div>
+    <div className="divide-border divide-y">
+      {entries.map(([key, value]) => (
         <div
-          aria-label={`${copy.score}: ${result.score}%`}
-          aria-valuemax={100}
-          aria-valuemin={0}
-          aria-valuenow={result.score}
-          className="h-2.5 w-full overflow-hidden rounded-full bg-secondary"
-          role="progressbar"
+          key={key}
+          className="gap-1 grid grid-cols-1 py-3 sm:gap-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,1.5fr)]"
         >
-          <div className={`h-full rounded-full transition-[width] ${tone.bar}`} style={{ width: `${result.score}%` }} />
+          <dt className="text-muted-foreground text-sm">
+            {humanize(key)}
+          </dt>
+          <dd className="break-all font-medium text-sm">
+            {displayValue(value)}
+          </dd>
         </div>
-      </div>
+      ))}
+    </div>
+  );
+}
 
-      <ul className="space-y-3">
-        {result.reasons.map((reason, index) => (
-          <li className="flex items-start gap-3 text-sm leading-6 text-muted-foreground" key={`${reason}-${index}`}>
-            <span className={`mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full ${tone.banner}`}>
-              {result.verdict === "safe" ? (
-                <Check aria-hidden="true" className="size-3.5" />
-              ) : result.verdict === "risky" ? (
-                <AlertTriangle aria-hidden="true" className="size-3.5" />
+function DataSection({
+  title,
+  data,
+}: {
+  title: string;
+  data: unknown;
+}) {
+  if (
+    data === undefined ||
+    data === null ||
+    (Array.isArray(data) && data.length === 0)
+  ) {
+    return null;
+  }
+
+  return (
+    <section className="bg-background border border-border p-4 rounded-xl">
+      <h4 className="font-semibold mb-3 text-sm">{title}</h4>
+
+      {Array.isArray(data) ? (
+        <div className="space-y-3">
+          {data.map((item, index) => (
+            <div
+              key={index}
+              className="bg-muted/50 p-3 rounded-lg"
+            >
+              <p className="font-semibold mb-2 text-muted-foreground text-xs">
+                Item {index + 1}
+              </p>
+
+              {isObject(item) ? (
+                <FieldList data={item} />
               ) : (
-                <X aria-hidden="true" className="size-3.5" />
+                <pre className="break-all overflow-x-auto text-xs whitespace-pre-wrap">
+                  {displayValue(item)}
+                </pre>
               )}
-            </span>
-            {reason}
-          </li>
-        ))}
-      </ul>
-
-      <Button className="w-full" onClick={onCheckAnother} type="button" variant="outline">
-        {copy.checkAnother}
-      </Button>
+            </div>
+          ))}
+        </div>
+      ) : isObject(data) ? (
+        <FieldList data={data} />
+      ) : (
+        <pre className="break-all overflow-x-auto text-xs whitespace-pre-wrap">
+          {displayValue(data)}
+        </pre>
+      )}
     </section>
   );
 }
 
-interface TransactionReportProps {
-  report: TransactionReport | null;
-  loading: boolean;
-  error: boolean;
-  language: Language;
-}
+export default function CheckResult({
+  response,
+  mode,
+  language,
+}: CheckResultProps) {
+  const copy = resultCopy[language === "pcm" ? "pcm" : "en"];
 
-function shortAddress(value: string) {
-  return `${value.slice(0, 8)}…${value.slice(-6)}`;
-}
+  const report = isObject(response.report) ? response.report : {};
+  const resultObject = isObject(response.result)
+    ? response.result
+    : {};
+  const comparison = isObject(response.comparison)
+    ? response.comparison
+    : isObject(report.comparison)
+      ? report.comparison
+      : isObject(resultObject.comparison)
+        ? resultObject.comparison
+        : null;
 
-function formatEther(valueWei: string) {
-  const value = BigInt(valueWei);
-  const whole = value / 10n ** 18n;
-  const fraction = (value % 10n ** 18n).toString().padStart(18, "0").slice(0, 6).replace(/0+$/, "");
-  return `${whole.toString()}${fraction ? `.${fraction}` : ""} ETH`;
-}
+  const token = isObject(report.token) ? report.token : null;
 
-export function TransactionReport({ report, loading, error, language }: TransactionReportProps) {
-  const copy = resultCopy[language];
+  const riskFlags =
+    report.riskFlags ??
+    response.riskFlags ??
+    (token ? token.riskFlags : undefined);
 
-  if (!loading && !error && !report) return null;
+  const securityData =
+    report.securityData ??
+    response.securityData ??
+    (token ? token.securityData : undefined);
+
+  const status = getStatus(response);
+  const statusStyle = getStatusStyle(status);
+  const StatusIcon = statusStyle.icon;
+
+  const reportForDisplay = {
+    ...report,
+    ...(
+      Object.keys(resultObject).length > 0
+        ? { matchResult: resultObject }
+        : {}
+    ),
+  };
+
+  async function copyReport() {
+    try {
+      await navigator.clipboard.writeText(
+        JSON.stringify(response, null, 2),
+      );
+    } catch {
+      const textarea = document.createElement("textarea");
+      textarea.value = JSON.stringify(response, null, 2);
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand("copy");
+      document.body.removeChild(textarea);
+    }
+  }
 
   return (
-    <section aria-labelledby="transaction-report-title" className="mt-6 border-t border-border pt-5">
-      <h2 className="font-display text-lg font-semibold" id="transaction-report-title">{copy.reportTitle}</h2>
-      {loading ? (
-        <p className="mt-4 flex items-center gap-2 text-sm text-muted-foreground" role="status">
-          <LoaderCircle aria-hidden="true" className="size-4 animate-spin" />
-          {copy.reportLoading}
-        </p>
-      ) : error ? (
-        <p className="mt-4 text-sm leading-6 text-destructive" role="alert">{copy.reportError}</p>
-      ) : report && !report.found ? (
-        <p className="mt-4 text-sm leading-6 text-muted-foreground" role="status">{copy.notFound}</p>
-      ) : report?.found ? (
-        <div className="mt-4 space-y-4">
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-sm">
-            <span className="font-medium">{copy.network}:</span>
-            <span className="text-muted-foreground">{report.networkName}</span>
-            <span className="text-border" aria-hidden="true">|</span>
-            <span className="font-medium">{copy.status}:</span>
-            <span className={`inline-flex items-center gap-1.5 font-semibold ${report.status === "success" ? "text-primary" : report.status === "failed" ? "text-destructive" : "text-warning"}`}>
-              {report.status === "success" ? <Check aria-hidden="true" className="size-4" /> : report.status === "failed" ? <X aria-hidden="true" className="size-4" /> : <Clock3 aria-hidden="true" className="size-4" />}
-              {copy[report.status]}
+    <div className="space-y-4">
+      <div className="bg-card border border-border overflow-hidden rounded-2xl shadow-sm">
+        <div className="border-b border-border p-5 sm:p-6">
+          <div className="flex gap-3 items-center justify-between mb-4">
+            <div className="flex gap-2 items-center text-primary">
+              {mode === "token" ? (
+                <ShieldCheck className="h-5 w-5" />
+              ) : (
+                <FileSearch className="h-5 w-5" />
+              )}
+              <span className="font-semibold text-xs tracking-wider uppercase">
+                SafeSign
+              </span>
+            </div>
+
+            <span className="text-muted-foreground text-xs">
+              {copy.result}
             </span>
           </div>
-          <dl className="grid grid-cols-1 gap-3 border-y border-border py-4 text-sm sm:grid-cols-2">
-            <div className="flex min-w-0 items-start gap-2">
-              <ArrowUpRight aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
-              <div className="min-w-0"><dt className="text-muted-foreground">{copy.from}</dt><dd className="break-all font-mono text-xs">{shortAddress(report.from)}</dd></div>
+
+          <div
+            className={`flex items-start gap-3 rounded-xl border p-4 ${statusStyle.className}`}
+          >
+            <StatusIcon className="h-5 mt-0.5 shrink-0 w-5" />
+
+            <div className="min-w-0">
+              <p className="font-medium opacity-80 text-xs">
+                {copy.status}
+              </p>
+              <h3 className="break-words font-bold mt-1 text-lg">
+                {getStatusLabel(status, copy)}
+              </h3>
+
+              {typeof response.message === "string" && (
+                <p className="mt-1 opacity-90 text-sm">
+                  {response.message}
+                </p>
+              )}
             </div>
-            <div className="flex min-w-0 items-start gap-2">
-              <ArrowDownLeft aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
-              <div className="min-w-0"><dt className="text-muted-foreground">{copy.to}</dt><dd className="break-all font-mono text-xs">{report.to ? shortAddress(report.to) : copy.contractCreation}</dd></div>
-            </div>
-            <div className="flex min-w-0 items-start gap-2">
-              <ExternalLink aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
-              <div><dt className="text-muted-foreground">{copy.value}</dt><dd>{formatEther(report.valueWei)}</dd></div>
-            </div>
-            <div className="flex min-w-0 items-start gap-2">
-              <Fuel aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
-              <div><dt className="text-muted-foreground">{copy.gas}</dt><dd>{report.gasUsed ? BigInt(report.gasUsed).toLocaleString() : "—"}</dd></div>
-            </div>
-            <div className="flex min-w-0 items-start gap-2">
-              <ExternalLink aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
-              <div><dt className="text-muted-foreground">{copy.blockNumber}</dt><dd>{report.blockNumber ? BigInt(report.blockNumber).toLocaleString() : "—"}</dd></div>
-            </div>
-            <div className="flex min-w-0 items-start gap-2">
-              <Clock3 aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
-              <div><dt className="text-muted-foreground">{copy.time}</dt><dd>{report.timestamp ? new Date(report.timestamp).toLocaleString() : copy.noTimestamp}</dd></div>
-            </div>
-          </dl>
-          <p className="text-xs leading-5 text-muted-foreground">{copy.chainData}</p>
+          </div>
         </div>
-      ) : null}
-    </section>
+
+        <div className="p-5 sm:p-6 space-y-5">
+          {mode === "verify" && (
+            <section>
+              <h4 className="flex font-semibold gap-2 items-center mb-2 text-sm">
+                <FileSearch className="h-4 text-primary w-4" />
+                {copy.transaction}
+              </h4>
+
+              <FieldList
+                data={report}
+                omit={OMIT_KEYS}
+              />
+            </section>
+          )}
+
+          {mode === "match" && (
+            <section>
+              <h4 className="flex font-semibold gap-2 items-center mb-2 text-sm">
+                <CheckCircle2 className="h-4 text-primary w-4" />
+                {copy.payment}
+              </h4>
+
+              {comparison && (
+                <FieldList data={comparison} />
+              )}
+
+              <FieldList
+                data={reportForDisplay}
+                omit={new Set([
+                  ...OMIT_KEYS,
+                  "comparison",
+                ])}
+              />
+
+              {Object.keys(resultObject).length > 0 && (
+                <DataSection
+                  title="Payment match result"
+                  data={resultObject}
+                />
+              )}
+            </section>
+          )}
+
+          {mode === "token" && (
+            <section>
+              <h4 className="flex font-semibold gap-2 items-center mb-2 text-sm">
+                <ShieldAlert className="h-4 text-primary w-4" />
+                {copy.token}
+              </h4>
+
+              {token && <FieldList data={token} />}
+
+              <FieldList
+                data={report}
+                omit={new Set([
+                  ...OMIT_KEYS,
+                  "token",
+                  "riskFlags",
+                  "securityData",
+                ])}
+              />
+
+              <DataSection
+                title="Risk flags"
+                data={riskFlags}
+              />
+
+              <DataSection
+                title="Security data"
+                data={securityData}
+              />
+
+              {!riskFlags &&
+                !securityData &&
+                status === "NO_RISK_FLAGS_RETURNED" && (
+                  <p className="bg-amber-500/10 border border-amber-500/30 dark:text-amber-300 p-3 rounded-lg text-amber-800 text-sm">
+                    No risk flags were returned by the security provider.
+                    This does not prove that the token is safe.
+                  </p>
+                )}
+            </section>
+          )}
+
+          <details className="bg-background border border-border p-4 rounded-xl">
+            <summary className="cursor-pointer font-semibold text-sm">
+              {copy.details}
+            </summary>
+
+            <div className="mt-3">
+              <FieldList
+                data={report}
+                omit={new Set([
+                  ...OMIT_KEYS,
+                  "riskFlags",
+                  "securityData",
+                ])}
+              />
+            </div>
+          </details>
+
+          <details className="bg-background border border-border p-4 rounded-xl">
+            <summary className="cursor-pointer font-semibold text-sm">
+              {copy.rawResponse}
+            </summary>
+
+            <pre className="bg-muted break-all leading-5 max-h-96 mt-3 overflow-auto p-3 rounded-lg text-xs whitespace-pre-wrap">
+              {JSON.stringify(response, null, 2)}
+            </pre>
+          </details>
+
+          <div className="border-border border-t flex flex-wrap gap-2 pt-4">
+            <button
+              type="button"
+              onClick={copyReport}
+              className="border border-border font-medium gap-2 h-10 hover:bg-muted inline-flex items-center px-4 rounded-lg text-sm transition"
+            >
+              <Copy className="h-4 w-4" />
+              {copy.copy}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => window.print()}
+              className="border border-border font-medium gap-2 h-10 hover:bg-muted inline-flex items-center px-4 rounded-lg text-sm transition"
+            >
+              <Printer className="h-4 w-4" />
+              {copy.print}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
