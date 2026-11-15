@@ -99,11 +99,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     },
     {
       property: "og:url",
-      content: "https://safesign-ai.vercel.app/",
+      content: "https://sign-before-you-shield.vercel.app/",
     },
     {
       property: "og:image",
-      content: "https://safesign-ai.vercel.app/safesign-preview.png",
+      content: "https://sign-before-you-shield.vercel.app/safesign-preview.png",
     },
     { property: "og:image:width", content: "1200" },
     { property: "og:image:height", content: "630" },
@@ -119,7 +119,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     },
     {
       name: "twitter:image",
-      content: "https://safesign-ai.vercel.app/safesign-preview.png",
+      content: "https://sign-before-you-shield.vercel.app/safesign-preview.png",
     },
   ],
   links: [
