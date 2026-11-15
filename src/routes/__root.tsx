@@ -101,33 +101,33 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       property: "og:url",
       content: "https://sign-before-you-shield.vercel.app/",
     },
-    {
-      property: "og:image",
-      content: "https://sign-before-you-shield.vercel.app/safesign-preview.png",
-    },
-    { property: "og:image:width", content: "1200" },
-    { property: "og:image:height", content: "630" },
-
-    { name: "twitter:card", content: "summary_large_image" },
-    {
-      name: "twitter:title",
-      content: "SafeSign — Web3 Transaction & Token Security",
-    },
-    {
-      name: "twitter:description",
-      content: "Verify transactions. Check token security. Stay safer on Web3.",
-    },
-    {
-      name: "twitter:image",
-      content: "https://sign-before-you-shield.vercel.app/safesign-preview.png",
-    },
+      {
+        property: "og:image",
+        content: "https://sign-before-you-shield.vercel.app/safesign-preview.png?v=2",
+      },
+      {
+        property: "og:image:secure_url",
+        content: "https://sign-before-you-shield.vercel.app/safesign-preview.png?v=2",
+      },
+      {
+        property: "og:image:alt",
+        content: "SafeSign Web3 Security",
+      },
+      {
+        property: "og:image:type",
+        content: "image/png",
+      },
+      {
+        name: "twitter:image",
+        content: "https://sign-before-you-shield.vercel.app/safesign-preview.png?v=2",
+      },
   ],
   links: [
     {
       rel: "stylesheet",
       href: appCss,
     },
-    { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
+    { rel: "icon", href: "/safesign-icon.svg", type: "image/svg+xml" },
     {
       rel: "preconnect",
       href: "https://fonts.googleapis.com",
