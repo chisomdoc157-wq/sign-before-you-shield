@@ -29,11 +29,57 @@ export const Route = createFileRoute("/")({
         content:
           "Verify blockchain transactions, payment authenticity and token security before you sign.",
       },
+
+      { property: "og:type", content: "website" },
+      { property: "og:site_name", content: "SafeSign" },
+      {
+        property: "og:title",
+        content: "SafeSign — Web3 Security Console",
+      },
+      {
+        property: "og:description",
+        content:
+          "Verify transactions. Match payments. Check token security. Make safer Web3 decisions with SafeSign.",
+      },
+      {
+        property: "og:url",
+        content: "https://sign-before-you-shield.vercel.app/",
+      },
+      {
+        property: "og:image",
+        content:
+          "https://sign-before-you-shield.vercel.app/safesign-preview.png",
+      },
+      {
+        property: "og:image:secure_url",
+        content:
+          "https://sign-before-you-shield.vercel.app/safesign-preview.png",
+      },
+      { property: "og:image:type", content: "image/png" },
+      { property: "og:image:width", content: "1200" },
+      { property: "og:image:height", content: "630" },
+      {
+        property: "og:image:alt",
+        content: "SafeSign Web3 Security Preview",
+      },
+
+      { name: "twitter:card", content: "summary_large_image" },
+      {
+        name: "twitter:title",
+        content: "SafeSign — Web3 Security Console",
+      },
+      {
+        name: "twitter:description",
+        content:
+          "Verify transactions. Match payments. Check token security.",
+      },
+      {
+        name: "twitter:image",
+        content:
+          "https://sign-before-you-shield.vercel.app/safesign-preview.png",
+      },
     ],
   }),
-  component: Index,
-});
-
 function Index() {
   const [language, setLanguage] = useState<Language>("en");
   const [languageLoaded, setLanguageLoaded] = useState(false);
@@ -66,50 +112,50 @@ function Index() {
     <div
       dir={direction}
       lang={language}
-      className="relative min-h-screen overflow-hidden bg-[#070b09] text-gray-100"
+      className="bg-[#070b09] min-h-screen overflow-hidden relative text-gray-100"
     >
       {/* Ambient background */}
-      <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="absolute -left-40 top-20 size-[420px] rounded-full bg-emerald-500/[0.06] blur-[120px]" />
-        <div className="absolute -right-40 top-[420px] size-[420px] rounded-full bg-green-500/[0.05] blur-[120px]" />
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(16,185,129,0.035)_1px,transparent_1px),linear-gradient(90deg,rgba(16,185,129,0.035)_1px,transparent_1px)] bg-[size:48px_48px]" />
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#070b09]/20 to-[#070b09]" />
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="-left-40 absolute bg-emerald-500/[0.06] blur-[120px] rounded-full size-[420px] top-20" />
+        <div className="-right-40 absolute bg-green-500/[0.05] blur-[120px] rounded-full size-[420px] top-[420px]" />
+        <div className="absolute bg-[linear-gradient(rgba(16,185,129,0.035)_1px,transparent_1px),linear-gradient(90deg,rgba(16,185,129,0.035)_1px,transparent_1px)] bg-[size:48px_48px] inset-0" />
+        <div className="absolute bg-gradient-to-b from-transparent inset-0 to-[#070b09] via-[#070b09]/20" />
       </div>
 
-      <div className="relative z-10 mx-auto flex min-h-screen w-full max-w-[1440px] flex-col px-4 sm:px-7 lg:px-10">
+      <div className="flex flex-col lg:px-10 max-w-[1440px] min-h-screen mx-auto px-4 relative sm:px-7 w-full z-10">
         <BrandHeader
           language={language}
           onLanguageChange={setLanguage}
         />
 
-        <main className="flex-1 pb-12 pt-8 sm:pt-12 lg:pt-14">
+        <main className="flex-1 lg:pt-14 pb-12 pt-8 sm:pt-12">
           {/* Console heading */}
-          <section className="mx-auto mb-8 max-w-5xl">
-            <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-              <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/[0.07] px-3 py-1.5">
-                <span className="relative flex size-2">
-                  <span className="absolute inline-flex size-full animate-ping rounded-full bg-emerald-400 opacity-50" />
-                  <span className="relative inline-flex size-2 rounded-full bg-emerald-400" />
+          <section className="max-w-5xl mb-8 mx-auto">
+            <div className="flex flex-wrap gap-3 items-center justify-between mb-5">
+              <div className="bg-emerald-500/[0.07] border border-emerald-500/20 gap-2 inline-flex items-center px-3 py-1.5 rounded-full">
+                <span className="flex relative size-2">
+                  <span className="absolute animate-ping bg-emerald-400 inline-flex opacity-50 rounded-full size-full" />
+                  <span className="bg-emerald-400 inline-flex relative rounded-full size-2" />
                 </span>
-                <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-300">
+                <span className="font-bold text-[10px] text-emerald-300 tracking-[0.2em] uppercase">
                   Security verification workspace
                 </span>
               </div>
 
-              <div className="flex items-center gap-2 text-[10px] font-medium uppercase tracking-[0.16em] text-gray-500">
+              <div className="flex font-medium gap-2 items-center text-[10px] text-gray-500 tracking-[0.16em] uppercase">
                 <LockKeyhole className="size-3.5 text-emerald-500/70" />
                 <span>On-chain data verification</span>
               </div>
             </div>
 
-            <div className="grid gap-8 lg:grid-cols-[1fr_auto] lg:items-end">
+            <div className="gap-8 grid lg:grid-cols-[1fr_auto] lg:items-end">
               <div>
-                <p className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-emerald-400">
+                <p className="flex font-semibold gap-2 items-center mb-3 text-emerald-400 text-xs tracking-[0.2em] uppercase">
                   <Activity className="size-4" />
                   {copy.eyebrow}
                 </p>
 
-                <h1 className="max-w-3xl font-display text-4xl font-bold leading-[1.08] tracking-tight text-white sm:text-5xl lg:text-[58px]">
+                <h1 className="font-bold font-display leading-[1.08] lg:text-[58px] max-w-3xl sm:text-5xl text-4xl text-white tracking-tight">
                   {copy.headline}
                   <br />
                   <span className="text-emerald-400">
@@ -117,19 +163,19 @@ function Index() {
                   </span>
                 </h1>
 
-                <p className="mt-5 max-w-2xl text-sm leading-7 text-gray-400 sm:text-base">
+                <p className="leading-7 max-w-2xl mt-5 sm:text-base text-gray-400 text-sm">
                   {copy.description}
                 </p>
               </div>
 
               <div className="hidden lg:flex lg:justify-end">
-                <div className="relative flex size-28 items-center justify-center rounded-3xl border border-emerald-500/20 bg-emerald-500/[0.04] shadow-[0_0_55px_rgba(16,185,129,0.07)]">
-                  <div className="absolute inset-2 rounded-2xl border border-emerald-500/10" />
+                <div className="bg-emerald-500/[0.04] border border-emerald-500/20 flex items-center justify-center relative rounded-3xl shadow-[0_0_55px_rgba(16,185,129,0.07)] size-28">
+                  <div className="absolute border border-emerald-500/10 inset-2 rounded-2xl" />
                   <ShieldEllipsis
                     className="size-14 text-emerald-400"
                     strokeWidth={1.2}
                   />
-                  <span className="absolute -bottom-2 rounded-full border border-emerald-500/30 bg-[#0b120e] px-3 py-1 text-[9px] font-bold uppercase tracking-widest text-emerald-300">
+                  <span className="-bottom-2 absolute bg-[#0b120e] border border-emerald-500/30 font-bold px-3 py-1 rounded-full text-[9px] text-emerald-300 tracking-widest uppercase">
                     SafeSign
                   </span>
                 </div>
@@ -138,44 +184,44 @@ function Index() {
           </section>
 
           {/* Workspace indicators */}
-          <section className="mx-auto mb-6 grid max-w-5xl grid-cols-2 gap-3 sm:grid-cols-3">
-            <div className="flex items-center gap-3 rounded-xl border border-white/[0.07] bg-white/[0.025] p-3.5">
-              <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-400">
+          <section className="gap-3 grid grid-cols-2 max-w-5xl mb-6 mx-auto sm:grid-cols-3">
+            <div className="bg-white/[0.025] border border-white/[0.07] flex gap-3 items-center p-3.5 rounded-xl">
+              <div className="bg-emerald-500/10 flex items-center justify-center rounded-lg shrink-0 size-9 text-emerald-400">
                 <Globe2 className="size-4.5" />
               </div>
               <div className="min-w-0">
-                <p className="text-[9px] font-semibold uppercase tracking-widest text-gray-500">
+                <p className="font-semibold text-[9px] text-gray-500 tracking-widest uppercase">
                   Network coverage
                 </p>
-                <p className="mt-1 text-sm font-bold text-gray-200">
+                <p className="font-bold mt-1 text-gray-200 text-sm">
                   7 networks
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-3 rounded-xl border border-white/[0.07] bg-white/[0.025] p-3.5">
-              <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-400">
+            <div className="bg-white/[0.025] border border-white/[0.07] flex gap-3 items-center p-3.5 rounded-xl">
+              <div className="bg-emerald-500/10 flex items-center justify-center rounded-lg shrink-0 size-9 text-emerald-400">
                 <Fingerprint className="size-4.5" />
               </div>
               <div className="min-w-0">
-                <p className="text-[9px] font-semibold uppercase tracking-widest text-gray-500">
+                <p className="font-semibold text-[9px] text-gray-500 tracking-widest uppercase">
                   Verification modes
                 </p>
-                <p className="mt-1 text-sm font-bold text-gray-200">
+                <p className="font-bold mt-1 text-gray-200 text-sm">
                   3 security checks
                 </p>
               </div>
             </div>
 
-            <div className="col-span-2 flex items-center gap-3 rounded-xl border border-white/[0.07] bg-white/[0.025] p-3.5 sm:col-span-1">
-              <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-400">
+            <div className="bg-white/[0.025] border border-white/[0.07] col-span-2 flex gap-3 items-center p-3.5 rounded-xl sm:col-span-1">
+              <div className="bg-emerald-500/10 flex items-center justify-center rounded-lg shrink-0 size-9 text-emerald-400">
                 <ShieldCheck className="size-4.5" />
               </div>
               <div className="min-w-0">
-                <p className="text-[9px] font-semibold uppercase tracking-widest text-gray-500">
+                <p className="font-semibold text-[9px] text-gray-500 tracking-widest uppercase">
                   Security principle
                 </p>
-                <p className="mt-1 text-sm font-bold text-gray-200">
+                <p className="font-bold mt-1 text-gray-200 text-sm">
                   Verify before signing
                 </p>
               </div>
@@ -183,35 +229,35 @@ function Index() {
           </section>
 
           {/* Main verification workspace */}
-          <section className="mx-auto max-w-5xl">
-            <div className="mb-3 flex items-center justify-between gap-3">
+          <section className="max-w-5xl mx-auto">
+            <div className="flex gap-3 items-center justify-between mb-3">
               <div>
-                <h2 className="text-sm font-bold tracking-wide text-gray-200">
+                <h2 className="font-bold text-gray-200 text-sm tracking-wide">
                   Verification console
                 </h2>
-                <p className="mt-1 text-xs text-gray-500">
+                <p className="mt-1 text-gray-500 text-xs">
                   Submit blockchain details for independent verification.
                 </p>
               </div>
 
-              <div className="hidden items-center gap-1.5 text-[10px] font-semibold uppercase tracking-widest text-emerald-400/70 sm:flex">
-                <span className="size-1.5 rounded-full bg-emerald-400" />
+              <div className="font-semibold gap-1.5 hidden items-center sm:flex text-[10px] text-emerald-400/70 tracking-widest uppercase">
+                <span className="bg-emerald-400 rounded-full size-1.5" />
                 Ready
               </div>
             </div>
 
-            <div className="rounded-2xl border border-emerald-500/20 bg-[#0b110e]/95 p-3 shadow-[0_20px_80px_rgba(0,0,0,0.35),0_0_45px_rgba(16,185,129,0.035)] sm:p-5">
-              <div className="mb-4 flex items-center justify-between border-b border-white/[0.06] pb-3">
-                <div className="flex items-center gap-2">
-                  <span className="size-2 rounded-full bg-red-400/80" />
-                  <span className="size-2 rounded-full bg-yellow-400/80" />
-                  <span className="size-2 rounded-full bg-emerald-400/80" />
-                  <span className="ml-2 text-[9px] font-semibold uppercase tracking-[0.2em] text-gray-500">
+            <div className="bg-[#0b110e]/95 border border-emerald-500/20 p-3 rounded-2xl shadow-[0_20px_80px_rgba(0,0,0,0.35),0_0_45px_rgba(16,185,129,0.035)] sm:p-5">
+              <div className="border-b border-white/[0.06] flex items-center justify-between mb-4 pb-3">
+                <div className="flex gap-2 items-center">
+                  <span className="bg-red-400/80 rounded-full size-2" />
+                  <span className="bg-yellow-400/80 rounded-full size-2" />
+                  <span className="bg-emerald-400/80 rounded-full size-2" />
+                  <span className="font-semibold ml-2 text-[9px] text-gray-500 tracking-[0.2em] uppercase">
                     SAFESIGN / CHECK
                   </span>
                 </div>
 
-                <span className="text-[9px] font-medium uppercase tracking-widest text-gray-600">
+                <span className="font-medium text-[9px] text-gray-600 tracking-widest uppercase">
                   Secure workspace
                 </span>
               </div>
@@ -219,30 +265,30 @@ function Index() {
               <CheckForm language={language} />
             </div>
 
-            <div className="mt-5 flex flex-col items-center justify-between gap-3 sm:flex-row">
-              <p className="flex items-center gap-2 text-[11px] text-gray-500">
+            <div className="flex flex-col gap-3 items-center justify-between mt-5 sm:flex-row">
+              <p className="flex gap-2 items-center text-[11px] text-gray-500">
                 <LockKeyhole className="size-3.5 text-emerald-500/70" />
                 Check transaction and contract data before trusting a payment.
               </p>
 
               <Link
                 to="/history"
-                className="group inline-flex items-center gap-2 rounded-lg border border-white/10 bg-white/[0.035] px-4 py-2.5 text-xs font-semibold text-gray-300 transition-all hover:border-emerald-500/40 hover:bg-emerald-500/[0.07] hover:text-emerald-300"
+                className="bg-white/[0.035] border border-white/10 font-semibold gap-2 group hover:bg-emerald-500/[0.07] hover:border-emerald-500/40 hover:text-emerald-300 inline-flex items-center px-4 py-2.5 rounded-lg text-gray-300 text-xs transition-all"
               >
                 <Clock3 className="size-3.5" />
                 View saved history
-                <ArrowUpRight className="size-3.5 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+                <ArrowUpRight className="group-hover:-translate-y-0.5 group-hover:translate-x-0.5 size-3.5 transition-transform" />
               </Link>
             </div>
           </section>
         </main>
 
-        <footer className="border-t border-emerald-500/10 py-5">
-          <div className="flex flex-col items-center justify-between gap-2 text-center sm:flex-row sm:text-left">
+        <footer className="border-emerald-500/10 border-t py-5">
+          <div className="flex flex-col gap-2 items-center justify-between sm:flex-row sm:text-left text-center">
             <p className="text-[11px] text-gray-500">
               {copy.footer}
             </p>
-            <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-gray-600">
+            <p className="font-semibold text-[9px] text-gray-600 tracking-[0.18em] uppercase">
               SAFESIGN · WEB3 SECURITY
             </p>
           </div>
