@@ -24,6 +24,7 @@ export const Route = createFileRoute("/")({
 
 function Index() {
 const [language, setLanguage] = useState<Language>("en");
+const [languageLoaded, setLanguageLoaded] = useState(false);
 
 useEffect(() => {
   const savedLanguage = localStorage.getItem("safesign-language");
@@ -34,11 +35,15 @@ useEffect(() => {
   ) {
     setLanguage(savedLanguage as Language);
   }
+
+  setLanguageLoaded(true);
 }, []);
 
 useEffect(() => {
-  localStorage.setItem("safesign-language", language);
-}, [language]);
+  if (languageLoaded) {
+    localStorage.setItem("safesign-language", language);
+  }
+}, [language, languageLoaded]);
   const copy = t(language);
 
   const direction =
