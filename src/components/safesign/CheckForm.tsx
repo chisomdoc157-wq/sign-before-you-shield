@@ -1,5 +1,4 @@
-
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import {
   ArrowRight,
   CheckCircle2,
@@ -12,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import CheckResult from "./CheckResult";
 import { t } from "./messages";
 import type { Language } from "./language";
+import { saveReport } from "@/lib/safesign-storage";
 
 const API_BASE = (
   import.meta.env.VITE_API_BASE_URL ||
@@ -167,6 +167,59 @@ export default function CheckForm({ language }: CheckFormProps) {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
+  const [draftLoaded, setDraftLoaded] = useState(false);
+
+useEffect(() => {
+  try {
+    const savedDraft = localStorage.getItem("safesign-form-draft");
+
+    if (savedDraft) {
+      const draft = JSON.parse(savedDraft);
+
+      setMode(draft.mode ?? "verify");
+      setNetwork(draft.network ?? "base");
+      setTransactionHash(draft.transactionHash ?? "");
+      setExpectedAmount(draft.expectedAmount ?? "");
+      setExpectedRecipient(draft.expectedRecipient ?? "");
+      setAssetType(draft.assetType ?? "native");
+      setExpectedTokenAddress(draft.expectedTokenAddress ?? "");
+      setTokenAddress(draft.tokenAddress ?? "");
+    }
+  } catch {
+    localStorage.removeItem("safesign-form-draft");
+  }
+
+  setDraftLoaded(true);
+}, []);
+
+useEffect(() => {
+  if (!draftLoaded) return;
+
+  localStorage.setItem(
+    "safesign-form-draft",
+    JSON.stringify({
+      mode,
+      network,
+      transactionHash,
+      expectedAmount,
+      expectedRecipient,
+      assetType,
+      expectedTokenAddress,
+      tokenAddress,
+    }),
+  );
+}, [
+  draftLoaded,
+  mode,
+  network,
+  transactionHash,
+  expectedAmount,
+  expectedRecipient,
+  assetType,
+  expectedTokenAddress,
+  tokenAddress,
+]);
+
   function resetResult() {
     setResult(null);
     setError("");
@@ -305,7 +358,38 @@ export default function CheckForm({ language }: CheckFormProps) {
       }
 
       setResult(data);
-      setResultMode(mode);
+setResultMode(mode);
+
+const searchText = [
+  network,
+  transactionHash,
+  expectedRecipient,
+  expectedTokenAddress,
+  tokenAddress,
+  mode,
+]
+  .filter(Boolean)
+  .join(" ")
+  .toLowerCase();
+
+const savedReport = {
+  id: crypto.randomUUID(),
+  mode,
+  network,
+  title:
+    mode === "verify"
+      ? "Transaction verification"
+      : mode === "match"
+        ? "Payment comparison"
+        : "Token security check",
+  searchText,
+  createdAt: new Date().toISOString(),
+  response: data,
+};
+
+void saveReport(savedReport).catch((storageError) => {
+  console.error("SafeSign could not save this report locally:", storageError);
+});
     } catch (requestError) {
       setError(
         requestError instanceof Error
