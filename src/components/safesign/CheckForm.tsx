@@ -28,6 +28,10 @@ const NETWORKS = [
   { value: "world_chain", label: "World Chain" },
 ];
 
+const HASH_REGEX = /^0x[a-fA-F0-9]{64}$/;
+
+const ADDRESS_REGEX = /^0x[a-fA-F0-9]{40}$/;
+
 type CheckMode = "verify" | "match" | "token";
 
 type FormCopy = {
