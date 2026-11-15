@@ -221,3 +221,207 @@
     color: black !important;
   }
     }
+
+
+/* =========================================
+   SAFESIGN — GLOBAL SECURITY INTERFACE
+   ========================================= */
+
+:root {
+  color-scheme: dark;
+  scroll-behavior: smooth;
+}
+
+html {
+  min-height: 100%;
+  background: #070b09;
+}
+
+body {
+  min-height: 100vh;
+  background-color: #070b09;
+  color: #e4e4e7;
+  font-feature-settings: "ss01" on;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: rgba(16, 185, 129, 0.3);
+  color: #ecfdf5;
+}
+
+:focus-visible {
+  outline: 2px solid rgba(52, 211, 153, 0.8);
+  outline-offset: 3px;
+}
+
+button,
+a,
+input,
+select,
+textarea {
+  -webkit-tap-highlight-color: transparent;
+}
+
+input,
+select,
+textarea {
+  color-scheme: dark;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: #71717a;
+  opacity: 1;
+}
+
+.safesign-grid {
+  background-image:
+    linear-gradient(rgba(52, 211, 153, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(52, 211, 153, 0.045) 1px, transparent 1px);
+  background-size: 42px 42px;
+  mask-image: linear-gradient(
+    to bottom,
+    black,
+    rgba(0, 0, 0, 0.45) 65%,
+    transparent
+  );
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    black,
+    rgba(0, 0, 0, 0.45) 65%,
+    transparent
+  );
+}
+
+.safesign-report-print {
+  break-inside: avoid;
+  overflow-wrap: anywhere;
+}
+
+.safesign-report-print pre {
+  max-width: 100%;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* =========================================
+   SAFESIGN — REPORT PRINT LAYOUT
+   ========================================= */
+
+@page {
+  size: auto;
+  margin: 14mm;
+}
+
+@media print {
+  html,
+  body {
+    min-height: auto !important;
+    background: #ffffff !important;
+    color: #111827 !important;
+  }
+
+  body * {
+    visibility: hidden !important;
+  }
+
+  .safesign-report-print,
+  .safesign-report-print * {
+    visibility: visible !important;
+  }
+
+  .safesign-report-print {
+    position: absolute !important;
+    inset: 0 auto auto 0 !important;
+    width: 100% !important;
+    max-width: none !important;
+    overflow: visible !important;
+    border: 1px solid #d1d5db !important;
+    border-radius: 0 !important;
+    background: #ffffff !important;
+    box-shadow: none !important;
+    color: #111827 !important;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  .safesign-report-print * {
+    color: #111827 !important;
+    text-shadow: none !important;
+    box-shadow: none !important;
+  }
+
+  .safesign-report-print h3,
+  .safesign-report-print h4,
+  .safesign-report-print p,
+  .safesign-report-print dt,
+  .safesign-report-print dd,
+  .safesign-report-print span {
+    color: #111827 !important;
+  }
+
+  .safesign-report-print .text-emerald-300,
+  .safesign-report-print .text-emerald-400 {
+    color: #047857 !important;
+  }
+
+  .safesign-report-print .text-red-300 {
+    color: #b91c1c !important;
+  }
+
+  .safesign-report-print .text-amber-300 {
+    color: #92400e !important;
+  }
+
+  .safesign-report-print .bg-\[\#090e0c\],
+  .safesign-report-print .bg-\[\#080d0b\],
+  .safesign-report-print .bg-\[\#070b09\] {
+    background: #ffffff !important;
+  }
+
+  .safesign-report-print details {
+    break-inside: avoid;
+  }
+
+  .safesign-report-print details > summary {
+    display: none !important;
+  }
+
+  .safesign-report-print details > div {
+    display: block !important;
+  }
+
+  .safesign-report-print button,
+  .safesign-report-print .pointer-events-none {
+    display: none !important;
+  }
+
+  .safesign-report-print section,
+  .safesign-report-print dl,
+  .safesign-report-print pre {
+    break-inside: avoid;
+  }
+
+  .safesign-report-print .border-white\/\[0\.07\],
+  .safesign-report-print .border-white\/\[0\.06\] {
+    border-color: #e5e7eb !important;
+  }
+
+  .safesign-report-print .divide-white\/\[0\.06\] > :not([hidden]) ~ :not([hidden]) {
+    border-color: #e5e7eb !important;
+  }
+                    }
+  
