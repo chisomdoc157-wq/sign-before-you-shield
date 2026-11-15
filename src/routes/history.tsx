@@ -8,6 +8,7 @@ import {
   getReports,
   type SavedReport,
 } from "@/lib/safesign-storage";
+import type { Language } from "@/components/safesign/language";
 
 export const Route = createFileRoute("/history")({
   head: () => ({
@@ -20,6 +21,16 @@ export const Route = createFileRoute("/history")({
 });
 
 function HistoryPage() {
+
+    const [language, setLanguage] = useState<Language>("en");
+
+  useEffect(() => {
+    const savedLanguage = localStorage.getItem("safesign-language");
+
+    if (savedLanguage) {
+      setLanguage(savedLanguage as Language);
+    }
+  }, []);
   const [reports, setReports] = useState<SavedReport[]>([]);
   const [selected, setSelected] = useState<SavedReport | null>(null);
   const [search, setSearch] = useState("");
@@ -189,23 +200,9 @@ function HistoryPage() {
             </div>
 
             <CheckResult
-              response={selected.response}
-              mode={selected.mode}
-              language={
-                (localStorage.getItem("safesign-language") as
-                  | "en"
-                  | "pcm"
-                  | "fr"
-                  | "es"
-                  | "pt"
-                  | "ar"
-                  | "zh"
-                  | "de"
-                  | "yo"
-                  | "ig"
-                  | "ha"
-                  | "hi") || "en"
-              }
+             response={selected.response}
+             mode={selected.mode}
+             language={language}
             />
           </section>
         )}
