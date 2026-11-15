@@ -15,17 +15,17 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 
 function NotFoundComponent() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
+    <div className="bg-background flex items-center justify-center min-h-screen px-4">
       <div className="max-w-md text-center">
-        <h1 className="text-7xl font-bold text-foreground">404</h1>
-        <h2 className="mt-4 text-xl font-semibold text-foreground">Page not found</h2>
-        <p className="mt-2 text-sm text-muted-foreground">
+        <h1 className="font-bold text-7xl text-foreground">404</h1>
+        <h2 className="font-semibold mt-4 text-foreground text-xl">Page not found</h2>
+        <p className="mt-2 text-muted-foreground text-sm">
           The page you're looking for doesn't exist or has been moved.
         </p>
         <div className="mt-6">
           <Link
             to="/"
-            className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+            className="bg-primary font-medium hover:bg-primary/90 inline-flex items-center justify-center px-4 py-2 rounded-md text-primary-foreground text-sm transition-colors"
           >
             Go home
           </Link>
@@ -43,27 +43,27 @@ function ErrorComponent({ error, reset }: ErrorComponentProps) {
   }, [error]);
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
+    <div className="bg-background flex items-center justify-center min-h-screen px-4">
       <div className="max-w-md text-center">
-        <h1 className="text-xl font-semibold tracking-tight text-foreground">
+        <h1 className="font-semibold text-foreground text-xl tracking-tight">
           This page didn't load
         </h1>
-        <p className="mt-2 text-sm text-muted-foreground">
+        <p className="mt-2 text-muted-foreground text-sm">
           Something went wrong on our end. You can try refreshing or head back home.
         </p>
-        <div className="mt-6 flex flex-wrap justify-center gap-2">
+        <div className="flex flex-wrap gap-2 justify-center mt-6">
           <button
             onClick={() => {
               router.invalidate();
               reset();
             }}
-            className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+            className="bg-primary font-medium hover:bg-primary/90 inline-flex items-center justify-center px-4 py-2 rounded-md text-primary-foreground text-sm transition-colors"
           >
             Try again
           </button>
           <a
             href="/"
-            className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
+            className="bg-background border border-input font-medium hover:bg-accent inline-flex items-center justify-center px-4 py-2 rounded-md text-foreground text-sm transition-colors"
           >
             Go home
           </a>
@@ -75,40 +75,74 @@ function ErrorComponent({ error, reset }: ErrorComponentProps) {
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   head: () => ({
-    // Use app-specific fallback metadata; individual pages provide their own descriptions.
-    // Never add og:image or twitter:image here: pages must not inherit a different page's image.
-    meta: [
-      { charSet: "utf-8" },
-      { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "SafeSign — A moment to check" },
-      { name: "description", content: "A friendlier way to pause before signing." },
-      { property: "og:title", content: "SafeSign — A moment to check" },
-      { property: "og:description", content: "A friendlier way to pause before signing." },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:site", content: "@Lovable" },
-    ],
-    links: [
-      {
-        rel: "stylesheet",
-        href: appCss,
-      },
-      { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
-      {
-        rel: "preconnect",
-        href: "https://fonts.googleapis.com",
-      },
-      {
-        rel: "preconnect",
-        href: "https://fonts.gstatic.com",
-        crossOrigin: "anonymous",
-      },
-      {
-        rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap",
-      },
-    ],
-  }),
+  meta: [
+    { charSet: "utf-8" },
+    { name: "viewport", content: "width=device-width, initial-scale=1" },
+
+    { title: "SafeSign — Web3 Transaction & Token Security" },
+    {
+      name: "description",
+      content:
+        "Verify blockchain transactions, match crypto payments, and check token security across multiple networks with SafeSign.",
+    },
+
+    { property: "og:type", content: "website" },
+    { property: "og:site_name", content: "SafeSign" },
+    {
+      property: "og:title",
+      content: "SafeSign — Web3 Transaction & Token Security",
+    },
+    {
+      property: "og:description",
+      content:
+        "Verify transactions. Match payments. Check token security. Make safer Web3 decisions with SafeSign.",
+    },
+    {
+      property: "og:url",
+      content: "https://safesign-ai.vercel.app/",
+    },
+    {
+      property: "og:image",
+      content: "https://safesign-ai.vercel.app/safesign-preview.png",
+    },
+    { property: "og:image:width", content: "1200" },
+    { property: "og:image:height", content: "630" },
+
+    { name: "twitter:card", content: "summary_large_image" },
+    {
+      name: "twitter:title",
+      content: "SafeSign — Web3 Transaction & Token Security",
+    },
+    {
+      name: "twitter:description",
+      content: "Verify transactions. Check token security. Stay safer on Web3.",
+    },
+    {
+      name: "twitter:image",
+      content: "https://safesign-ai.vercel.app/safesign-preview.png",
+    },
+  ],
+  links: [
+    {
+      rel: "stylesheet",
+      href: appCss,
+    },
+    { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
+    {
+      rel: "preconnect",
+      href: "https://fonts.googleapis.com",
+    },
+    {
+      rel: "preconnect",
+      href: "https://fonts.gstatic.com",
+      crossOrigin: "anonymous",
+    },
+    {
+      rel: "stylesheet",
+      href: "https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap",
+    },
+  ],
+}),
   shellComponent: RootShell,
   component: RootComponent,
   notFoundComponent: NotFoundComponent,
