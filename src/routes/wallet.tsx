@@ -139,13 +139,15 @@ function WalletCheckPage() {
     <div className="bg-[#070b09] min-h-screen text-gray-100">
       <div className="lg:px-8 max-w-7xl mx-auto px-4 sm:px-6">
         <BrandHeader
-          language={language}
-          onLanguageChange={(next) => {
-            setLanguage(next);
-            localStorage.setItem("safesign-language", next);
-          }}
-        />
-
+  language={language}
+  onLanguageChange={(next) => {
+    setLanguage(next);
+    localStorage.setItem("safesign-language", next);
+  }}
+  onTokenScannerClick={() => {
+    window.location.assign("/?scanner=token");
+  }}
+/>
         <main className="pb-16">
           <div className="flex flex-wrap gap-3 items-center justify-between py-6">
             <Link
