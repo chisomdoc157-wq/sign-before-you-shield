@@ -129,7 +129,7 @@ function Index() {
     <div
       dir={direction}
       lang={language}
-      className="bg-[#070b09] min-h-screen overflow-hidden relative text-gray-100"
+      className="bg-[#070b09] min-h-screen overflow-x-clip relative text-gray-100"
     >
       {/* Ambient background */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
