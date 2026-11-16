@@ -102,6 +102,26 @@ function Index() {
   const [languageLoaded, setLanguageLoaded] = useState(false);
 
   useEffect(() => {
+  const params = new URLSearchParams(window.location.search);
+
+  if (params.get("scanner") === "token") {
+    setRequestedMode("token");
+    window.history.replaceState({}, "", "/");
+  }
+}, []);
+
+  useEffect(() => {
+  if (requestedMode === "token") {
+    document
+      .getElementById("safesign-check-form")
+      ?.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+  }
+}, [requestedMode]);
+
+  useEffect(() => {
     const savedLanguage = localStorage.getItem("safesign-language");
 
     if (
@@ -263,8 +283,10 @@ function Index() {
                 Ready
               </div>
             </div>
-
-            <div className="bg-[#0b110e]/95 border border-emerald-500/20 p-3 rounded-2xl shadow-[0_20px_80px_rgba(0,0,0,0.35),0_0_45px_rgba(16,185,129,0.035)] sm:p-5">
+<div
+  id="safesign-check-form"
+  className="bg-[#0b110e]/95 border border-emerald-500/20 p-3 rounded-2xl shadow-[0_20px_80px_rgba(0,0,0,0.35),0_0_45px_rgba(16,185,129,0.035)] sm:p-5"
+>
               <div className="border-b border-white/[0.06] flex items-center justify-between mb-4 pb-3">
                 <div className="flex gap-2 items-center">
                   <span className="bg-red-400/80 rounded-full size-2" />
