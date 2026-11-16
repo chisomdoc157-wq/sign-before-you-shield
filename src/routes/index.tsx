@@ -286,7 +286,7 @@ function Index() {
               />
             </div>
 
-
+            {/* Navigation links */}
             <div className="flex flex-col gap-3 items-center justify-between mt-5 sm:flex-row">
               <p className="flex gap-2 items-center text-[11px] text-gray-500">
                 <LockKeyhole className="size-3.5 text-emerald-500/70" />
@@ -312,21 +312,6 @@ function Index() {
                   <ArrowUpRight className="group-hover:-translate-y-0.5 group-hover:translate-x-0.5 size-3.5 transition-transform" />
                 </Link>
               </div>
-            </div>
-
-              <p className="flex gap-2 items-center text-[11px] text-gray-500">
-                <LockKeyhole className="size-3.5 text-emerald-500/70" />
-                Check transaction and contract data before trusting a payment.
-              </p>
-
-              <Link
-                to="/history"
-                className="bg-white/[0.035] border border-white/10 font-semibold gap-2 group hover:bg-emerald-500/[0.07] hover:border-emerald-500/40 hover:text-emerald-300 inline-flex items-center px-4 py-2.5 rounded-lg text-gray-300 text-xs transition-all"
-              >
-                <Clock3 className="size-3.5" />
-                View saved history
-                <ArrowUpRight className="group-hover:-translate-y-0.5 group-hover:translate-x-0.5 size-3.5 transition-transform" />
-              </Link>
             </div>
           </section>
         </main>

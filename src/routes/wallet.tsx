@@ -82,7 +82,29 @@ function WalletCheckPage() {
         }),
       });
 
-      const data = await response.json();
+        const responseText = await response.text();
+
+        let data;
+
+        try {
+            data = JSON.parse(responseText);
+        } catch (err) {
+            setError(
+                err instanceof TypeError
+                    ? "Could not connect to SafeSign backend. Check the backend URL, deployment and CORS settings."
+                    : err instanceof Error
+                        ? err.message
+                        : "Could not complete wallet security check."
+            );
+        } finally {
+            setLoading(false);
+        }
+
+        if (!response.ok || !data.success || !data.report) {
+            throw new Error(
+                data.message || `Wallet check failed (${response.status}).`
+            );
+        }
 
       if (!response.ok || !data.success || !data.report) {
         throw new Error(data.message || "Wallet check failed.");
