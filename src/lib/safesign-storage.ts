@@ -1,4 +1,4 @@
-export type CheckMode = "verify" | "match" | "token";
+export type CheckMode = "verify" | "match" | "token" | "link";
 
 export interface SavedReport {
   id: string;

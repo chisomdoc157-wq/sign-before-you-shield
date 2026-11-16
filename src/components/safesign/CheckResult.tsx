@@ -1,4 +1,6 @@
 
+import { useState } from "react";
+
 import {
   AlertTriangle,
   CheckCircle2,
@@ -10,6 +12,7 @@ import {
   ShieldCheck,
   XCircle,
 } from "lucide-react";
+
 import type { Language } from "./language";
 
 type CheckMode = "verify" | "match" | "token";
@@ -50,6 +53,9 @@ const resultCopy: Record<
     unknown: string;
     yes: string;
     no: string;
+    nativeTransfers: string;
+    tokenTransfers: string;
+    nativeTransfer: string;
   }
 > = {
   en: {
@@ -80,6 +86,9 @@ const resultCopy: Record<
     unknown: "Unknown",
     yes: "Yes",
     no: "No",
+    nativeTransfers: "Native currency transfers",
+    tokenTransfers: "Token transfers",
+    nativeTransfer: "Top-level native transfer",
   },
   pcm: {
     result: "Check result",
@@ -109,6 +118,9 @@ const resultCopy: Record<
     unknown: "Unknown",
     yes: "Yes",
     no: "No",
+    nativeTransfers: "Native currency transfers",
+    tokenTransfers: "Token transfers",
+    nativeTransfer: "Main native transfer",
   },
 };
 
@@ -147,11 +159,15 @@ function displayValue(value: unknown): string {
 
 function getStatus(response: Record<string, unknown>) {
   const report = isObject(response.report) ? response.report : {};
-  const result = isObject(response.result) ? response.result : {};
+
+  const result = isObject(response.result)
+    ? response.result
+    : {};
 
   const candidates = [
     response.result,
     response.status,
+    response.matchStatus,
     result.status,
     result.matchStatus,
     report.status,
@@ -172,16 +188,23 @@ function getStatus(response: Record<string, unknown>) {
   return "UNKNOWN";
 }
 
-function getStatusLabel(status: string, copy: (typeof resultCopy)["en"]) {
+function getStatusLabel(
+  status: string,
+  copy: (typeof resultCopy)["en"],
+) {
   const labels: Record<string, string> = {
     MATCHED: copy.matched,
     MISMATCHED: copy.mismatched,
     PENDING: copy.pending,
+    PENDING_RECEIPT: copy.pending,
     CONFIRMING: copy.confirming,
     NOT_FOUND: copy.notFound,
     UNVERIFIABLE: copy.unverifiable,
     TRUSTED: copy.trusted,
+    VERIFIED: copy.trusted,
     UNVERIFIED: copy.unverified,
+    FAKE: copy.riskDetected,
+    UNTRUSTED: copy.riskDetected,
     RISK_DETECTED: copy.riskDetected,
     HIGH_RISK: copy.riskDetected,
     NO_RISK_FLAGS_RETURNED: copy.noRiskFlags,
@@ -202,6 +225,7 @@ function getStatusStyle(status: string) {
     "SUCCESS",
     "SUCCESSFUL",
     "TRUSTED",
+    "VERIFIED",
     "CONFIRMED",
   ];
 
@@ -211,6 +235,8 @@ function getStatusStyle(status: string) {
     "RISK_DETECTED",
     "HIGH_RISK",
     "UNTRUSTED",
+    "FAKE",
+    "REJECTED",
   ];
 
   if (goodStatuses.includes(status)) {
@@ -232,14 +258,19 @@ function getStatusStyle(status: string) {
   }
 
   if (
-    status === "PENDING" ||
-    status === "CONFIRMING" ||
-    status === "NO_RISK_FLAGS_RETURNED" ||
-    status === "PARTIAL_DATA" ||
-    status === "NO_DATA" ||
-    status === "UNVERIFIABLE" ||
-    status === "UNVERIFIED" ||
-    status === "NOT_FOUND"
+    [
+      "PENDING",
+      "PENDING_RECEIPT",
+      "CONFIRMING",
+      "NO_RISK_FLAGS_RETURNED",
+      "PARTIAL_DATA",
+      "NO_DATA",
+      "UNVERIFIABLE",
+      "UNVERIFIED",
+      "NOT_FOUND",
+      "NOT_SUPPORTED",
+      "UNAVAILABLE",
+    ].includes(status)
   ) {
     return {
       className:
@@ -250,8 +281,7 @@ function getStatusStyle(status: string) {
   }
 
   return {
-    className:
-      "border-white/10 bg-white/5 text-zinc-300",
+    className: "border-white/10 bg-white/5 text-zinc-300",
     icon: Clock3,
     indicator: "bg-zinc-400",
   };
@@ -290,16 +320,17 @@ function FieldList({
   if (entries.length === 0) return null;
 
   return (
-    <dl className="divide-y divide-white/[0.06]">
+    <dl className="divide-white/[0.06] divide-y">
       {entries.map(([key, value]) => (
         <div
           key={key}
-          className="grid grid-cols-1 gap-1 py-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1.5fr)] sm:gap-4"
+          className="gap-1 grid grid-cols-1 py-3 sm:gap-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,1.5fr)]"
         >
-          <dt className="text-xs font-medium uppercase tracking-wider text-zinc-500">
+          <dt className="font-medium text-xs text-zinc-500 tracking-wider uppercase">
             {humanize(key)}
           </dt>
-          <dd className="break-all text-sm font-medium text-zinc-200">
+
+          <dd className="break-all font-medium text-sm text-zinc-200">
             {displayValue(value)}
           </dd>
         </div>
@@ -324,9 +355,9 @@ function DataSection({
   }
 
   return (
-    <section className="rounded-xl border border-white/[0.07] bg-[#080d0b] p-4">
-      <h4 className="mb-3 flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-emerald-400">
-        <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+    <section className="bg-[#080d0b] border border-white/[0.07] p-4 rounded-xl">
+      <h4 className="flex font-bold gap-2 items-center mb-3 text-emerald-400 text-xs tracking-wider uppercase">
+        <span className="bg-emerald-400 h-1.5 rounded-full w-1.5" />
         {title}
       </h4>
 
@@ -335,16 +366,16 @@ function DataSection({
           {data.map((item, index) => (
             <div
               key={index}
-              className="rounded-lg border border-white/[0.06] bg-white/[0.02] p-3"
+              className="bg-white/[0.02] border border-white/[0.06] p-3 rounded-lg"
             >
-              <p className="mb-2 text-xs font-semibold text-zinc-500">
+              <p className="font-semibold mb-2 text-xs text-zinc-500">
                 Item {index + 1}
               </p>
 
               {isObject(item) ? (
                 <FieldList data={item} />
               ) : (
-                <pre className="overflow-x-auto whitespace-pre-wrap break-all text-xs text-zinc-300">
+                <pre className="break-all overflow-x-auto text-xs text-zinc-300 whitespace-pre-wrap">
                   {displayValue(item)}
                 </pre>
               )}
@@ -354,11 +385,38 @@ function DataSection({
       ) : isObject(data) ? (
         <FieldList data={data} />
       ) : (
-        <pre className="overflow-x-auto whitespace-pre-wrap break-all text-xs text-zinc-300">
+        <pre className="break-all overflow-x-auto text-xs text-zinc-300 whitespace-pre-wrap">
           {displayValue(data)}
         </pre>
       )}
     </section>
+  );
+}
+
+function TransactionTransferSections({
+  report,
+  copy,
+}: {
+  report: Record<string, unknown>;
+  copy: (typeof resultCopy)["en"];
+}) {
+  return (
+    <>
+      <DataSection
+        title={copy.nativeTransfer}
+        data={report.nativeTransfer}
+      />
+
+      <DataSection
+        title={copy.nativeTransfers}
+        data={report.nativeTransfers}
+      />
+
+      <DataSection
+        title={copy.tokenTransfers}
+        data={report.tokenTransfers}
+      />
+    </>
   );
 }
 
@@ -369,7 +427,12 @@ export default function CheckResult({
 }: CheckResultProps) {
   const copy = resultCopy[language === "pcm" ? "pcm" : "en"];
 
-  const report = isObject(response.report) ? response.report : {};
+  const [hasCopied, setHasCopied] = useState(false);
+
+  const report = isObject(response.report)
+    ? response.report
+    : {};
+
   const resultObject = isObject(response.result)
     ? response.result
     : {};
@@ -382,7 +445,9 @@ export default function CheckResult({
         ? resultObject.comparison
         : null;
 
-  const token = isObject(report.token) ? report.token : null;
+  const token = isObject(report.token)
+    ? report.token
+    : null;
 
   const riskFlags =
     report.riskFlags ??
@@ -396,6 +461,7 @@ export default function CheckResult({
 
   const status = getStatus(response);
   const statusStyle = getStatusStyle(status);
+
   const StatusIcon = statusStyle.icon;
 
   const reportForDisplay = {
@@ -405,56 +471,51 @@ export default function CheckResult({
       : {}),
   };
 
-  function formatReportValue(value: unknown, label = ""): string[] {
-    if (value === null || value === undefined || value === "") {
-      return [];
-    }
-
-    if (Array.isArray(value)) {
-      return value.flatMap((item, index) =>
-        formatReportValue(item, `${label} ${index + 1}`.trim()),
-      );
-    }
-
-    if (isObject(value)) {
-      return Object.entries(value).flatMap(([key, item]) => {
-        if (OMIT_KEYS.has(key)) return [];
-        return formatReportValue(item, humanize(key));
-      });
-    }
-
-    return [`${label ? `${label}: ` : ""}${displayValue(value)}`];
-  }
-
   async function copyReport() {
-    const lines = [
-      "SAFESIGN — VERIFICATION REPORT",
+    const reportText = [
+      "SAFESIGN — SECURITY REPORT",
       `Check type: ${humanize(mode)}`,
       `Status: ${getStatusLabel(status, copy)}`,
       "",
-      ...formatReportValue(reportForDisplay),
-      ...(comparison
-        ? ["", "PAYMENT COMPARISON", ...formatReportValue(comparison)]
-        : []),
-      ...(riskFlags
-        ? ["", "RISK FLAGS", ...formatReportValue(riskFlags)]
-        : []),
-      ...(securityData
-        ? ["", "SECURITY DETAILS", ...formatReportValue(securityData)]
-        : []),
+      "FULL API RESPONSE",
+      JSON.stringify(response, null, 2),
       "",
       "Generated by SafeSign",
-    ];
+    ].join("\n");
 
     try {
-      await navigator.clipboard.writeText(lines.join("\n"));
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(reportText);
+      } else {
+        throw new Error("Clipboard API unavailable");
+      }
+
+      setHasCopied(true);
+      window.setTimeout(() => setHasCopied(false), 2000);
     } catch {
-      const textarea = document.createElement("textarea");
-      textarea.value = lines.join("\n");
-      document.body.appendChild(textarea);
-      textarea.select();
-      document.execCommand("copy");
-      document.body.removeChild(textarea);
+      try {
+        const textarea = document.createElement("textarea");
+
+        textarea.value = reportText;
+        textarea.style.position = "fixed";
+        textarea.style.opacity = "0";
+
+        document.body.appendChild(textarea);
+        textarea.select();
+
+        const successful = document.execCommand("copy");
+
+        document.body.removeChild(textarea);
+
+        if (!successful) {
+          throw new Error("Copy operation failed");
+        }
+
+        setHasCopied(true);
+        window.setTimeout(() => setHasCopied(false), 2000);
+      } catch {
+        window.alert("Unable to copy the report. Please try again.");
+      }
     }
   }
 
@@ -466,39 +527,41 @@ export default function CheckResult({
 
   return (
     <div className="space-y-4">
-      <div className="safesign-report-print overflow-hidden rounded-2xl border border-emerald-500/15 bg-[#090e0c] shadow-[0_20px_80px_rgba(0,0,0,0.3)]">
+      <div className="bg-[#090e0c] border border-emerald-500/15 overflow-hidden rounded-2xl safesign-report-print shadow-[0_20px_80px_rgba(0,0,0,0.3)]">
 
         {/* Report header */}
-        <div className="relative overflow-hidden border-b border-white/[0.07] p-5 sm:p-6">
-          <div className="pointer-events-none absolute -right-20 -top-24 h-64 w-64 rounded-full bg-emerald-500/[0.07] blur-3xl" />
+        <div className="border-b border-white/[0.07] overflow-hidden p-5 relative sm:p-6">
+          <div className="-right-20 -top-24 absolute bg-emerald-500/[0.07] blur-3xl h-64 pointer-events-none rounded-full w-64" />
 
           <div className="relative">
-            <div className="mb-6 flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2.5">
-                <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-emerald-500/25 bg-emerald-500/10">
-                  <ShieldCheck className="h-5 w-5 text-emerald-400" />
+            <div className="flex gap-3 items-center justify-between mb-6">
+              <div className="flex gap-2.5 items-center">
+                <div className="bg-emerald-500/10 border border-emerald-500/25 flex h-9 items-center justify-center rounded-lg w-9">
+                  <ShieldCheck className="h-5 text-emerald-400 w-5" />
                 </div>
 
                 <div>
-                  <p className="text-sm font-black tracking-[0.16em] text-white">
+                  <p className="font-black text-sm text-white tracking-[0.16em]">
                     SAFESIGN
                   </p>
-                  <p className="text-[9px] font-semibold uppercase tracking-[0.2em] text-zinc-500">
+
+                  <p className="font-semibold text-[9px] text-zinc-500 tracking-[0.2em] uppercase">
                     Security intelligence
                   </p>
                 </div>
               </div>
 
-              <div className="rounded-full border border-emerald-500/20 bg-emerald-500/[0.06] px-3 py-1.5">
-                <span className="text-[9px] font-bold uppercase tracking-[0.14em] text-emerald-400">
+              <div className="bg-emerald-500/[0.06] border border-emerald-500/20 px-3 py-1.5 rounded-full">
+                <span className="font-bold text-[9px] text-emerald-400 tracking-[0.14em] uppercase">
                   {copy.result}
                 </span>
               </div>
             </div>
 
-            <div className="mb-4 flex items-center gap-2">
-              <span className="h-px w-6 bg-emerald-500/60" />
-              <span className="text-[10px] font-bold uppercase tracking-[0.17em] text-zinc-500">
+            <div className="flex gap-2 items-center mb-4">
+              <span className="bg-emerald-500/60 h-px w-6" />
+
+              <span className="font-bold text-[10px] text-zinc-500 tracking-[0.17em] uppercase">
                 {modeLabel}
               </span>
             </div>
@@ -507,24 +570,27 @@ export default function CheckResult({
             <div
               className={`flex items-start gap-4 rounded-xl border p-4 sm:p-5 ${statusStyle.className}`}
             >
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-current/20 bg-black/20">
+              <div className="bg-black/20 border border-current/20 flex h-11 items-center justify-center rounded-xl shrink-0 w-11">
                 <StatusIcon className="h-6 w-6" />
               </div>
 
-              <div className="min-w-0 flex-1">
-                <div className="mb-1 flex items-center gap-2">
-                  <span className={`h-1.5 w-1.5 rounded-full ${statusStyle.indicator}`} />
-                  <p className="text-[10px] font-bold uppercase tracking-[0.15em] opacity-75">
+              <div className="flex-1 min-w-0">
+                <div className="flex gap-2 items-center mb-1">
+                  <span
+                    className={`h-1.5 w-1.5 rounded-full ${statusStyle.indicator}`}
+                  />
+
+                  <p className="font-bold opacity-75 text-[10px] tracking-[0.15em] uppercase">
                     {copy.status}
                   </p>
                 </div>
 
-                <h3 className="break-words text-xl font-black tracking-tight sm:text-2xl">
+                <h3 className="break-words font-black sm:text-2xl text-xl tracking-tight">
                   {getStatusLabel(status, copy)}
                 </h3>
 
                 {typeof response.message === "string" && (
-                  <p className="mt-2 text-sm leading-relaxed opacity-80">
+                  <p className="leading-relaxed mt-2 opacity-80 text-sm">
                     {response.message}
                   </p>
                 )}
@@ -534,38 +600,53 @@ export default function CheckResult({
         </div>
 
         {/* Report content */}
-        <div className="space-y-6 p-5 sm:p-6">
+        <div className="p-5 sm:p-6 space-y-6">
 
+          {/* Transaction verification */}
           {mode === "verify" && (
-            <section>
-              <h4 className="mb-3 flex items-center gap-2 text-xs font-bold uppercase tracking-[0.12em] text-emerald-400">
+            <section className="space-y-4">
+              <h4 className="flex font-bold gap-2 items-center mb-3 text-emerald-400 text-xs tracking-[0.12em] uppercase">
                 <FileSearch className="h-4 w-4" />
                 {copy.transaction}
               </h4>
 
-              <div className="rounded-xl border border-white/[0.07] bg-[#080d0b] px-4">
-                <FieldList data={report} omit={OMIT_KEYS} />
+              <div className="bg-[#080d0b] border border-white/[0.07] px-4 rounded-xl">
+                <FieldList
+                  data={report}
+                  omit={OMIT_KEYS}
+                />
               </div>
+
+              <TransactionTransferSections
+                report={report}
+                copy={copy}
+              />
             </section>
           )}
 
+          {/* Payment matching */}
           {mode === "match" && (
             <section className="space-y-4">
-              <h4 className="mb-3 flex items-center gap-2 text-xs font-bold uppercase tracking-[0.12em] text-emerald-400">
+              <h4 className="flex font-bold gap-2 items-center mb-3 text-emerald-400 text-xs tracking-[0.12em] uppercase">
                 <CheckCircle2 className="h-4 w-4" />
                 {copy.payment}
               </h4>
 
               {comparison && (
-                <div className="rounded-xl border border-white/[0.07] bg-[#080d0b] px-4">
+                <div className="bg-[#080d0b] border border-white/[0.07] px-4 rounded-xl">
                   <FieldList data={comparison} />
                 </div>
               )}
 
-              <div className="rounded-xl border border-white/[0.07] bg-[#080d0b] px-4">
+              <div className="bg-[#080d0b] border border-white/[0.07] px-4 rounded-xl">
                 <FieldList
                   data={reportForDisplay}
-                  omit={new Set([...OMIT_KEYS, "comparison"])}
+                  omit={
+                    new Set([
+                      ...OMIT_KEYS,
+                      "comparison",
+                    ])
+                  }
                 />
               </div>
 
@@ -575,23 +656,41 @@ export default function CheckResult({
                   data={resultObject}
                 />
               )}
+
+              <TransactionTransferSections
+                report={report}
+                copy={copy}
+              />
+
+              {typeof response.assetAuthenticity === "string" && (
+                <div className="bg-amber-500/[0.06] border border-amber-500/25 p-4 rounded-xl">
+                  <p className="font-bold text-amber-400 text-xs tracking-wider uppercase">
+                    Asset authenticity
+                  </p>
+
+                  <p className="font-semibold mt-2 text-amber-200 text-sm">
+                    {humanize(response.assetAuthenticity)}
+                  </p>
+                </div>
+              )}
             </section>
           )}
 
+          {/* Token security */}
           {mode === "token" && (
             <section className="space-y-4">
-              <h4 className="mb-3 flex items-center gap-2 text-xs font-bold uppercase tracking-[0.12em] text-emerald-400">
+              <h4 className="flex font-bold gap-2 items-center mb-3 text-emerald-400 text-xs tracking-[0.12em] uppercase">
                 <ShieldAlert className="h-4 w-4" />
                 {copy.token}
               </h4>
 
               {token && (
-                <div className="rounded-xl border border-white/[0.07] bg-[#080d0b] px-4">
+                <div className="bg-[#080d0b] border border-white/[0.07] px-4 rounded-xl">
                   <FieldList data={token} />
                 </div>
               )}
 
-              <div className="rounded-xl border border-white/[0.07] bg-[#080d0b] px-4">
+              <div className="bg-[#080d0b] border border-white/[0.07] px-4 rounded-xl">
                 <FieldList
                   data={report}
                   omit={
@@ -605,21 +704,67 @@ export default function CheckResult({
                 />
               </div>
 
-              <DataSection title="Risk flags" data={riskFlags} />
+              <DataSection
+                title="Risk flags"
+                data={riskFlags}
+              />
 
-              <DataSection title="Security data" data={securityData} />
+              <DataSection
+                title="Security data"
+                data={securityData}
+              />
 
               {status === "NO_RISK_FLAGS_RETURNED" && (
-                <div className="flex gap-3 rounded-xl border border-amber-500/25 bg-amber-500/[0.07] p-4 text-amber-300">
-                  <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0" />
+                <div className="bg-amber-500/[0.07] border border-amber-500/25 flex gap-3 p-4 rounded-xl text-amber-300">
+                  <AlertTriangle className="h-5 mt-0.5 shrink-0 w-5" />
+
                   <div>
-                    <p className="text-sm font-bold">
+                    <p className="font-bold text-sm">
                       No risk flags returned
                     </p>
-                    <p className="mt-1 text-xs leading-relaxed text-amber-200/75">
-                      No risk flags were returned by the security provider.
-                      This does not prove that the token is safe or authentic.
-                      Always review the available security indicators.
+
+                    <p className="leading-relaxed mt-1 text-amber-200/75 text-xs">
+                      No risk flags were returned by the security
+                      provider. This does not prove that the token
+                      is safe or authentic. Always review the
+                      available security indicators.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {status === "NO_DATA" && (
+                <div className="bg-amber-500/[0.07] border border-amber-500/25 flex gap-3 p-4 rounded-xl text-amber-300">
+                  <AlertTriangle className="h-5 mt-0.5 shrink-0 w-5" />
+
+                  <div>
+                    <p className="font-bold text-sm">
+                      Security information unavailable
+                    </p>
+
+                    <p className="leading-relaxed mt-1 text-amber-200/75 text-xs">
+                      The security provider returned no security
+                      record for this contract. The absence of
+                      information must not be interpreted as proof
+                      of safety.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {status === "PARTIAL_DATA" && (
+                <div className="bg-amber-500/[0.07] border border-amber-500/25 flex gap-3 p-4 rounded-xl text-amber-300">
+                  <AlertTriangle className="h-5 mt-0.5 shrink-0 w-5" />
+
+                  <div>
+                    <p className="font-bold text-sm">
+                      Partial security information
+                    </p>
+
+                    <p className="leading-relaxed mt-1 text-amber-200/75 text-xs">
+                      The security provider returned incomplete
+                      information. Some risks may not have been
+                      evaluated.
                     </p>
                   </div>
                 </div>
@@ -627,55 +772,52 @@ export default function CheckResult({
             </section>
           )}
 
-          {/* Additional report details */}
-          <details className="group overflow-hidden rounded-xl border border-white/[0.07] bg-[#080d0b]">
-            <summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-4">
-              <span className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-zinc-300">
-                <FileSearch className="h-4 w-4 text-emerald-400" />
+          {/* Full API response */}
+          <details className="bg-[#080d0b] border border-white/[0.07] group overflow-hidden rounded-xl">
+            <summary className="cursor-pointer flex gap-3 items-center justify-between list-none p-4">
+              <span className="flex font-bold gap-2 items-center text-xs text-zinc-300 tracking-wider uppercase">
+                <FileSearch className="h-4 text-emerald-400 w-4" />
                 {copy.details}
               </span>
 
-              <span className="text-xs text-zinc-500 transition-transform group-open:rotate-180">
+              <span className="group-open:rotate-180 text-xs text-zinc-500 transition-transform">
                 ↓
               </span>
             </summary>
 
-            <div className="border-t border-white/[0.06] px-4">
-              <FieldList
-                data={report}
-                omit={
-                  new Set([
-                    ...OMIT_KEYS,
-                    "riskFlags",
-                    "securityData",
-                  ])
-                }
-              />
+            <div className="border-t border-white/[0.06] p-4">
+              <p className="font-bold mb-3 text-[10px] text-emerald-400 tracking-wider uppercase">
+                {copy.rawResponse}
+              </p>
+
+              <pre className="bg-black/30 break-all font-mono leading-relaxed max-h-[500px] overflow-auto p-3 rounded-lg text-[10px] text-zinc-300 whitespace-pre-wrap">
+                {JSON.stringify(response, null, 2)}
+              </pre>
             </div>
           </details>
 
           {/* Report actions */}
-          <div className="flex flex-wrap gap-2 border-t border-white/[0.07] pt-5">
+          <div className="border-t border-white/[0.07] flex flex-wrap gap-2 pt-5">
             <button
               type="button"
-              onClick={copyReport}
-              className="inline-flex h-10 items-center gap-2 rounded-lg border border-emerald-500/25 bg-emerald-500/[0.08] px-4 text-xs font-bold text-emerald-300 transition hover:border-emerald-400/50 hover:bg-emerald-500/[0.15]"
+              onClick={() => void copyReport()}
+              className="bg-emerald-500/[0.08] border border-emerald-500/25 font-bold gap-2 h-10 hover:bg-emerald-500/[0.15] hover:border-emerald-400/50 inline-flex items-center px-4 rounded-lg text-emerald-300 text-xs transition"
             >
               <Copy className="h-4 w-4" />
-              {copy.copy}
+              {hasCopied ? copy.copied : copy.copy}
             </button>
 
             <button
               type="button"
               onClick={() => window.print()}
-              className="inline-flex h-10 items-center gap-2 rounded-lg border border-white/10 bg-white/[0.03] px-4 text-xs font-bold text-zinc-300 transition hover:border-white/20 hover:bg-white/[0.07]"
+              className="bg-white/[0.03] border border-white/10 font-bold gap-2 h-10 hover:bg-white/[0.07] hover:border-white/20 inline-flex items-center px-4 rounded-lg text-xs text-zinc-300 transition"
             >
               <Printer className="h-4 w-4" />
               {copy.print}
             </button>
           </div>
 
-          <div className="flex items-center justify-between gap-3 text-[9px] font-semibold uppercase tracking-[0.14em] text-zinc-600">
+          <div className="flex font-semibold gap-3 items-center justify-between text-[9px] text-zinc-600 tracking-[0.14em] uppercase">
             <span>SafeSign Security Protocol</span>
             <span>Verification report</span>
           </div>
