@@ -43,7 +43,7 @@ export function BrandHeader({
   const closeMenu = () => setMenuOpen(false);
 
   return (
-    <header className="backdrop-blur-xl bg-[#070b09]/95 border-b border-emerald-500/15 relative z-50">
+    <header className="sticky top-0 inset-x-0 backdrop-blur-xl bg-[#070b09]/95 border-b border-emerald-500/15 z-50">
       <div className="flex gap-2 items-center justify-between min-h-[72px] py-3">
 
         {/* Brand */}
