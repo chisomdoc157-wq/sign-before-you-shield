@@ -38,6 +38,7 @@ type CheckMode = "verify" | "match" | "token";
 
 interface CheckFormProps {
   language: Language;
+  requestedMode?: CheckMode;
 }
 
 const fieldClass =
@@ -46,7 +47,10 @@ const fieldClass =
 const labelClass =
   "mb-2 block text-xs font-semibold tracking-wide text-gray-300";
 
-export default function CheckForm({ language }: CheckFormProps) {
+export default function CheckForm({
+  language,
+  requestedMode,
+}: CheckFormProps) {
   const messages = t(language);
   const extra = messages;
 
@@ -138,7 +142,21 @@ export default function CheckForm({ language }: CheckFormProps) {
     if (loading) return;
     setMode(nextMode);
     resetForm();
-  }
+  };
+
+  useEffect(() => {
+    if (!requestedMode || requestedMode === mode) return;
+
+    setMode(requestedMode);
+    setTransactionHash("");
+    setExpectedAmount("");
+    setExpectedRecipient("");
+    setAssetType("native");
+    setExpectedTokenAddress("");
+    setTokenAddress("");
+    setResult(null);
+    setError("");
+  }, [requestedMode]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -331,9 +349,9 @@ export default function CheckForm({ language }: CheckFormProps) {
   ];
 
   return (
-    <section className="mx-auto w-full">
+    <section id="safesign-check-form" className="mx-auto w-full">
       {/* Mode selector */}
-      <div className="mb-6 grid grid-cols-3 gap-2 rounded-xl border border-white/[0.07] bg-black/30 p-1.5">
+      <div className="bg-black/30 border border-white/[0.07] gap-2 grid grid-cols-3 mb-6 p-1.5 rounded-xl">
         {modeOptions.map((option) => {
           const Icon = option.icon;
           const active = mode === option.value;
@@ -358,10 +376,10 @@ export default function CheckForm({ language }: CheckFormProps) {
               />
 
               <span className="min-w-0">
-                <span className="block text-[11px] font-bold sm:text-xs">
+                <span className="block font-bold sm:text-xs text-[11px]">
                   {option.label}
                 </span>
-                <span className="mt-0.5 hidden text-[9px] text-gray-500 sm:block">
+                <span className="hidden mt-0.5 sm:block text-[9px] text-gray-500">
                   {option.description}
                 </span>
               </span>
@@ -371,8 +389,8 @@ export default function CheckForm({ language }: CheckFormProps) {
       </div>
 
       {/* Form heading */}
-      <div className="mb-6 flex items-start gap-3">
-        <div className="flex size-11 shrink-0 items-center justify-center rounded-xl border border-emerald-500/20 bg-emerald-500/[0.08] text-emerald-400">
+      <div className="flex gap-3 items-start mb-6">
+        <div className="bg-emerald-500/[0.08] border border-emerald-500/20 flex items-center justify-center rounded-xl shrink-0 size-11 text-emerald-400">
           {mode === "verify" ? (
             <ScanSearch className="size-5" />
           ) : mode === "match" ? (
@@ -383,8 +401,8 @@ export default function CheckForm({ language }: CheckFormProps) {
         </div>
 
         <div className="min-w-0">
-          <div className="mb-1 flex flex-wrap items-center gap-2">
-            <h2 className="text-lg font-bold tracking-tight text-white sm:text-xl">
+          <div className="flex flex-wrap gap-2 items-center mb-1">
+            <h2 className="font-bold sm:text-xl text-lg text-white tracking-tight">
               {mode === "verify"
                 ? extra.verifyTitle
                 : mode === "match"
@@ -392,7 +410,7 @@ export default function CheckForm({ language }: CheckFormProps) {
                   : extra.tokenTitle}
             </h2>
 
-            <span className="rounded border border-emerald-500/20 bg-emerald-500/[0.07] px-2 py-0.5 text-[8px] font-bold uppercase tracking-widest text-emerald-400">
+            <span className="bg-emerald-500/[0.07] border border-emerald-500/20 font-bold px-2 py-0.5 rounded text-[8px] text-emerald-400 tracking-widest uppercase">
               {mode === "verify"
                 ? "01 / VERIFY"
                 : mode === "match"
@@ -401,7 +419,7 @@ export default function CheckForm({ language }: CheckFormProps) {
             </span>
           </div>
 
-          <p className="text-xs leading-6 text-gray-500 sm:text-sm">
+          <p className="leading-6 sm:text-sm text-gray-500 text-xs">
             {mode === "verify"
               ? extra.verifyDescription
               : mode === "match"
@@ -556,7 +574,7 @@ export default function CheckForm({ language }: CheckFormProps) {
                 </option>
               </select>
 
-              <p className="mt-2 rounded-lg border border-white/[0.05] bg-white/[0.02] px-3 py-2.5 text-[10px] leading-5 text-gray-500">
+              <p className="bg-white/[0.02] border border-white/[0.05] leading-5 mt-2 px-3 py-2.5 rounded-lg text-[10px] text-gray-500">
                 {assetType === "native"
                   ? extra.nativeHelp
                   : extra.tokenHelp}
@@ -614,7 +632,7 @@ export default function CheckForm({ language }: CheckFormProps) {
               className={`${fieldClass} font-mono`}
             />
 
-            <p className="mt-2 text-[10px] leading-5 text-gray-600">
+            <p className="leading-5 mt-2 text-[10px] text-gray-600">
               Submit the actual contract address, not just the token name or symbol.
             </p>
           </div>
@@ -624,9 +642,9 @@ export default function CheckForm({ language }: CheckFormProps) {
         {error && (
           <div
             role="alert"
-            className="flex items-start gap-3 rounded-lg border border-red-500/25 bg-red-500/[0.07] px-4 py-3 text-sm text-red-300"
+            className="bg-red-500/[0.07] border border-red-500/25 flex gap-3 items-start px-4 py-3 rounded-lg text-red-300 text-sm"
           >
-            <ShieldCheck className="mt-0.5 size-4 shrink-0 text-red-400" />
+            <ShieldCheck className="mt-0.5 shrink-0 size-4 text-red-400" />
             <span>{error}</span>
           </div>
         )}
@@ -635,11 +653,11 @@ export default function CheckForm({ language }: CheckFormProps) {
         <Button
           type="submit"
           disabled={loading}
-          className="group h-12 w-full gap-2 rounded-lg border border-emerald-400/30 bg-emerald-500 font-bold text-[#041109] shadow-[0_0_25px_rgba(16,185,129,0.10)] transition-all hover:bg-emerald-400 hover:shadow-[0_0_30px_rgba(16,185,129,0.20)] disabled:cursor-not-allowed disabled:opacity-60"
+          className="bg-emerald-500 border border-emerald-400/30 disabled:cursor-not-allowed disabled:opacity-60 font-bold gap-2 group h-12 hover:bg-emerald-400 hover:shadow-[0_0_30px_rgba(16,185,129,0.20)] rounded-lg shadow-[0_0_25px_rgba(16,185,129,0.10)] text-[#041109] transition-all w-full"
         >
           {loading ? (
             <>
-              <Loader2 className="size-4 animate-spin" />
+              <Loader2 className="animate-spin size-4" />
               {extra.checking}
             </>
           ) : (
@@ -649,14 +667,14 @@ export default function CheckForm({ language }: CheckFormProps) {
                 : mode === "match"
                   ? extra.comparePayment
                   : extra.checkToken}
-              <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" />
+              <ArrowRight className="group-hover:translate-x-1 size-4 transition-transform" />
             </>
           )}
         </Button>
 
-        <div className="flex items-center justify-center gap-2 pb-1 text-center">
+        <div className="flex gap-2 items-center justify-center pb-1 text-center">
           <ShieldCheck className="size-3 text-emerald-500/60" />
-          <p className="text-[9px] font-medium uppercase tracking-[0.14em] text-gray-600">
+          <p className="font-medium text-[9px] text-gray-600 tracking-[0.14em] uppercase">
             Blockchain data verification · Check before you trust
           </p>
         </div>
@@ -664,7 +682,7 @@ export default function CheckForm({ language }: CheckFormProps) {
 
       {/* Results */}
       {result && (
-        <div className="mt-7 border-t border-emerald-500/15 pt-6">
+        <div className="border-emerald-500/15 border-t mt-7 pt-6">
           <CheckResult
             response={result}
             mode={resultMode}

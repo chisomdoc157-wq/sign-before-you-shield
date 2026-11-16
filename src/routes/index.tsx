@@ -82,6 +82,20 @@ export const Route = createFileRoute("/")({
   }),
 function Index() {
   const [language, setLanguage] = useState<Language>("en");
+  const [requestedMode, setRequestedMode] = useState<
+    "verify" | "match" | "token" | undefined
+  >(undefined);
+
+  function openTokenScanner() {
+  setRequestedMode("token");
+
+    document
+      .getElementById("safesign-check-form")
+    ?.scrollIntoView({
+      behavior: "smooth",
+      block: "center",
+    });
+}
   const [languageLoaded, setLanguageLoaded] = useState(false);
 
   useEffect(() => {
@@ -126,6 +140,7 @@ function Index() {
         <BrandHeader
           language={language}
           onLanguageChange={setLanguage}
+          onTokenScannerClick={openTokenScanner}
         />
 
         <main className="flex-1 lg:pt-14 pb-12 pt-8 sm:pt-12">
@@ -262,7 +277,10 @@ function Index() {
                 </span>
               </div>
 
-              <CheckForm language={language} />
+              <CheckForm
+                language={language}
+                requestedMode={requestedMode}
+              />
             </div>
 
             <div className="flex flex-col gap-3 items-center justify-between mt-5 sm:flex-row">

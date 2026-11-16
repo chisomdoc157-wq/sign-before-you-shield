@@ -20,11 +20,13 @@ import { t } from "./messages";
 interface BrandHeaderProps {
   language: Language;
   onLanguageChange: (language: Language) => void;
+  onTokenScannerClick: () => void;
 }
 
 export function BrandHeader({
   language,
   onLanguageChange,
+  onTokenScannerClick,
 }: BrandHeaderProps) {
   const copy = t(language);
 
@@ -64,6 +66,14 @@ export function BrandHeader({
             <ScanSearch className="size-4" />
             <span className="hidden md:inline">Link Scanner</span>
           </Link>
+          <button
+            type="button"
+            onClick={onTokenScannerClick}
+            className={navLinkClass}
+          >
+            <ShieldCheck className="size-4" />
+            <span className="hidden md:inline">Token Scanner</span>
+          </button>
 
           <Link to="/history" className={navLinkClass}>
             <History className="size-4" />
