@@ -62,7 +62,7 @@ export function BrandHeader({
             <span className="hidden md:inline">Workspace</span>
           </Link>
 
-          <Link to="/links" className={navLinkClass}>
+          <Link to="/link" className={navLinkClass}>
             <ScanSearch className="size-4" />
             <span className="hidden md:inline">Link Scanner</span>
           </Link>
