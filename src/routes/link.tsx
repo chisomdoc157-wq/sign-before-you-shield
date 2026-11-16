@@ -272,7 +272,7 @@ function LinkScannerPage() {
       network: "web",
       title: "URL security scan",
       searchText: nextReport.submittedUrl || url,
-      createdAt: reportCreatedAt.current || new Date().toISOString(), ,
+      createdAt: reportCreatedAt.current || new Date().toISOString(), 
       response: {
         success: true,
         message,
@@ -291,7 +291,7 @@ function LinkScannerPage() {
       setError("Enter a URL to scan.");
       return;
     }
-    
+
 
     try {
       const parsedUrl = new URL(submittedUrl);
@@ -325,9 +325,9 @@ function LinkScannerPage() {
       setReport(response.report);
 
       persistLinkReport(
-  response.report,
-  response.message || "URL scan submitted.",
-);
+        response.report,
+        response.message || "URL scan submitted.",
+      );
     } catch (err) {
       setError(
         err instanceof Error
@@ -555,27 +555,25 @@ function LinkScannerPage() {
               </div>
 
               <div
-                className={`rounded-2xl border p-5 sm:p-6 ${
-                  verdict.color === "red"
+                className={`rounded-2xl border p-5 sm:p-6 ${verdict.color === "red"
                     ? "border-red-500/25 bg-red-500/[0.06]"
                     : verdict.color === "amber"
                       ? "border-amber-500/25 bg-amber-500/[0.06]"
                       : verdict.color === "emerald"
                         ? "border-emerald-500/25 bg-emerald-500/[0.06]"
                         : "border-blue-500/25 bg-blue-500/[0.06]"
-                }`}
+                  }`}
               >
                 <div className="flex gap-4 items-start">
                   <div
-                    className={`flex size-12 shrink-0 items-center justify-center rounded-xl ${
-                      verdict.color === "red"
+                    className={`flex size-12 shrink-0 items-center justify-center rounded-xl ${verdict.color === "red"
                         ? "bg-red-500/10 text-red-400"
                         : verdict.color === "amber"
                           ? "bg-amber-500/10 text-amber-400"
                           : verdict.color === "emerald"
                             ? "bg-emerald-500/10 text-emerald-400"
                             : "bg-blue-500/10 text-blue-400"
-                    }`}
+                      }`}
                   >
                     <VerdictIcon className="size-6" />
                   </div>
@@ -693,11 +691,10 @@ function LinkScannerPage() {
                         </div>
 
                         <span
-                          className={`rounded-md border px-2 py-1 text-[10px] font-semibold uppercase ${
-                            detection.category === "malicious"
+                          className={`rounded-md border px-2 py-1 text-[10px] font-semibold uppercase ${detection.category === "malicious"
                               ? "border-red-500/20 bg-red-500/[0.06] text-red-300"
                               : "border-amber-500/20 bg-amber-500/[0.06] text-amber-300"
-                          }`}
+                            }`}
                         >
                           {detection.category || "Flagged"}
                         </span>
