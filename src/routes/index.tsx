@@ -80,6 +80,8 @@ export const Route = createFileRoute("/")({
       },
     ],
   }),
+  component: Index,
+});
 function Index() {
   const [language, setLanguage] = useState<Language>("en");
   const [requestedMode, setRequestedMode] = useState<
