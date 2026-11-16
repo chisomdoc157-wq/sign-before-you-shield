@@ -82,10 +82,14 @@ function getReportStatus(report: SavedReport) {
 }
 
 function getStatusAppearance(status: string) {
-  if (
-    ["MATCHED", "SUCCESS", "SUCCESSFUL", "TRUSTED", "CONFIRMED", "NO_KNOWN_THREATS",].includes(
-      status,
-    )
+  if [
+    "MATCHED",
+    "SUCCESS",
+    "SUCCESSFUL",
+    "TRUSTED",
+    "CONFIRMED",
+    "NO_KNOWN_THREATS",
+  ].includes(status)
   ) {
     return {
       label: status.replace(/_/g, " "),
@@ -661,7 +665,7 @@ function HistoryPage() {
 
                         <button
                           type="button"
-                          oonClick={() => {
+                          onClick={() => {
                             setDeleteError("");
                             setDeleteTarget(report);
                           }}
