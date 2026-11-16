@@ -32,8 +32,8 @@ function getModeLabel(mode: SavedReport["mode"]) {
     verify: "Transaction verification",
     match: "Payment authentication",
     token: "Token security",
+    link: "URL security scan",
   };
-
   return labels[mode] ?? "Security check";
 }
 
@@ -52,12 +52,18 @@ function getReportStatus(report: SavedReport) {
     !Array.isArray(response.report)
       ? (response.report as Record<string, unknown>)
       : {};
-
+  if (
+    report.mode === "link" &&
+    typeof data.verdict === "string"
+  ) {
+    return data.verdict.toUpperCase().replace(/[\s-]+/g, "_");
+  }
   const candidates = [
     response.status,
     result.status,
     result.matchStatus,
     data.status,
+    data.verdict,
     data.trustStatus,
     data.transactionStatus,
     data.executionStatus,
@@ -77,7 +83,7 @@ function getReportStatus(report: SavedReport) {
 
 function getStatusAppearance(status: string) {
   if (
-    ["MATCHED", "SUCCESS", "SUCCESSFUL", "TRUSTED", "CONFIRMED"].includes(
+    ["MATCHED", "SUCCESS", "SUCCESSFUL", "TRUSTED", "CONFIRMED", "NO_KNOWN_THREATS",].includes(
       status,
     )
   ) {
@@ -122,6 +128,151 @@ function formatDate(value: string) {
   }).format(date);
 }
 
+function LinkHistoryResult({
+  response,
+}: {
+  response: Record<string, unknown>;
+}) {
+  const report =
+    response.report &&
+    typeof response.report === "object" &&
+    !Array.isArray(response.report)
+      ? (response.report as Record<string, unknown>)
+      : {};
+
+  const statistics =
+    report.statistics &&
+    typeof report.statistics === "object"
+      ? (report.statistics as Record<string, unknown>)
+      : {};
+
+  const verdict = String(report.verdict || "PENDING").toUpperCase();
+  const status = String(report.status || "Unknown");
+  const submittedUrl = String(report.submittedUrl || "Not available");
+  const analysisId = String(report.analysisId || "Not available");
+
+  const lastAnalysis = report.lastAnalysisDate;
+  const analysisDate =
+    typeof lastAnalysis === "number"
+      ? formatDate(new Date(lastAnalysis * 1000).toISOString())
+      : typeof lastAnalysis === "string"
+        ? formatDate(lastAnalysis)
+        : "Not available";
+
+  const isMalicious = verdict === "MALICIOUS";
+  const isSuspicious = verdict === "SUSPICIOUS";
+  const isClean = verdict === "NO_KNOWN_THREATS";
+
+  const verdictStyle = isMalicious
+    ? "border-red-500/25 bg-red-500/10 text-red-300"
+    : isSuspicious
+      ? "border-amber-500/25 bg-amber-500/10 text-amber-300"
+      : isClean
+        ? "border-emerald-500/25 bg-emerald-500/10 text-emerald-300"
+        : "border-blue-500/25 bg-blue-500/10 text-blue-300";
+
+  const stats = [
+    { label: "Malicious", value: statistics.malicious ?? 0 },
+    { label: "Suspicious", value: statistics.suspicious ?? 0 },
+    { label: "Harmless", value: statistics.harmless ?? 0 },
+    { label: "Undetected", value: statistics.undetected ?? 0 },
+  ];
+
+  return (
+    <div className="space-y-4">
+      <div className={`rounded-xl border p-4 ${verdictStyle}`}>
+        <p className="font-bold text-sm">
+          {isMalicious
+            ? "Malicious URL detected"
+            : isSuspicious
+              ? "Suspicious URL"
+              : isClean
+                ? "No known threats detected"
+                : "Analysis pending"}
+        </p>
+
+        <p className="leading-5 mt-2 opacity-80 text-xs">
+          {isClean
+            ? "No malicious or suspicious detections were returned. This does not guarantee that the URL is safe."
+            : isMalicious
+              ? "Security engines detected malicious activity. Avoid visiting or interacting with this URL."
+              : isSuspicious
+                ? "One or more security engines flagged this URL. Treat it with caution."
+                : "The security analysis is not yet complete."}
+        </p>
+      </div>
+
+      <div className="gap-3 grid grid-cols-2 sm:grid-cols-4">
+        {stats.map((item) => (
+          <div
+            key={item.label}
+            className="bg-[#070c09] border border-white/[0.08] p-3 rounded-xl"
+          >
+            <p className="text-[10px] text-zinc-500">{item.label}</p>
+            <p className="font-bold mt-2 text-2xl text-white">
+              {String(item.value)}
+            </p>
+          </div>
+        ))}
+      </div>
+
+      <div className="bg-[#070c09] border border-white/[0.08] p-4 rounded-xl">
+        <p className="font-bold mb-3 text-white text-xs">
+          Scan information
+        </p>
+
+        <div className="space-y-3 text-xs">
+          <div>
+            <p className="text-zinc-500">Submitted URL</p>
+            <p className="break-all mt-1 text-emerald-300">
+              {submittedUrl}
+            </p>
+          </div>
+
+          <div className="gap-3 grid sm:grid-cols-2">
+            <div>
+              <p className="text-zinc-500">Analysis status</p>
+              <p className="mt-1 text-zinc-200">
+                {status.replace(/[_-]/g, " ")}
+              </p>
+            </div>
+
+            <div>
+              <p className="text-zinc-500">Last analysis</p>
+              <p className="mt-1 text-zinc-200">{analysisDate}</p>
+            </div>
+          </div>
+
+          <div>
+            <p className="text-zinc-500">Analysis ID</p>
+            <p className="break-all font-mono mt-1 text-[10px] text-zinc-400">
+              {analysisId}
+            </p>
+          </div>
+        </div>
+
+        {analysisId !== "Not available" && (
+          <a
+            href={`https://www.virustotal.com/gui/url/${encodeURIComponent(analysisId)}`}
+            target="_blank"
+            rel="noreferrer"
+            className="font-semibold gap-2 hover:text-emerald-200 inline-flex items-center mt-4 text-emerald-300 text-xs"
+          >
+            View on VirusTotal
+            <ArrowUpRight className="h-3.5 w-3.5" />
+          </a>
+        )}
+      </div>
+
+      <p className="leading-5 text-[10px] text-zinc-500">
+        VirusTotal results are threat-intelligence signals, not a guarantee
+        that a website is safe. Always verify unfamiliar websites before
+        connecting a wallet or signing transactions.
+      </p>
+    </div>
+  );
+}
+
 function HistoryPage() {
   const [reports, setReports] = useState<SavedReport[]>([]);
   const [selected, setSelected] = useState<SavedReport | null>(null);
@@ -129,6 +280,9 @@ function HistoryPage() {
   const [language, setLanguage] = useState<Language>("en");
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
+  const [deleteTarget, setDeleteTarget] = useState<SavedReport | null>(null);
+  const [deleteError, setDeleteError] = useState("");
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     const savedLanguage = localStorage.getItem("safesign-language");
@@ -188,25 +342,28 @@ function HistoryPage() {
     });
   }, [reports, search]);
 
-  async function handleDelete(report: SavedReport) {
-    const confirmed = window.confirm(
-      `Delete this saved report?\n\n${report.title || getModeLabel(report.mode)}\n\nThis action cannot be undone.`,
-    );
+  async function handleDelete() {
+    if (!deleteTarget || deleting) return;
 
-    if (!confirmed) return;
+    setDeleting(true);
+    setDeleteError("");
 
     try {
-      await deleteReport(report.id);
+      await deleteReport(deleteTarget.id);
 
       setReports((current) =>
-        current.filter((item) => item.id !== report.id),
+        current.filter((item) => item.id !== deleteTarget.id),
       );
 
-      if (selected?.id === report.id) {
+      if (selected?.id === deleteTarget.id) {
         setSelected(null);
       }
+
+      setDeleteTarget(null);
     } catch {
-      window.alert("Could not delete this report. Please try again.");
+      setDeleteError("Could not delete this report. Please try again.");
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -223,23 +380,23 @@ function HistoryPage() {
   ).length;
 
   return (
-    <main className="relative min-h-screen overflow-hidden bg-[#070b09] text-zinc-100">
-      <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(ellipse_at_50%_-20%,rgba(16,185,129,0.12),transparent_55%)]" />
-      <div className="safesign-grid pointer-events-none fixed inset-0 opacity-20" />
+    <main className="bg-[#070b09] min-h-screen overflow-hidden relative text-zinc-100">
+      <div className="bg-[radial-gradient(ellipse_at_50%_-20%,rgba(16,185,129,0.12),transparent_55%)] fixed inset-0 pointer-events-none" />
+      <div className="fixed inset-0 opacity-20 pointer-events-none safesign-grid" />
 
-      <div className="relative mx-auto w-full max-w-7xl px-4 py-5 sm:px-6 lg:px-8">
+      <div className="lg:px-8 max-w-7xl mx-auto px-4 py-5 relative sm:px-6 w-full">
         {/* Top navigation */}
-        <header className="mb-10 flex items-center justify-between gap-4 border-b border-white/[0.07] pb-5">
-          <Link to="/" className="group flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-emerald-500/25 bg-emerald-500/10 transition group-hover:bg-emerald-500/20">
-              <ShieldCheck className="h-5 w-5 text-emerald-400" />
+        <header className="border-b border-white/[0.07] flex gap-4 items-center justify-between mb-10 pb-5">
+          <Link to="/" className="flex gap-3 group items-center">
+            <div className="bg-emerald-500/10 border border-emerald-500/25 flex group-hover:bg-emerald-500/20 h-10 items-center justify-center rounded-xl transition w-10">
+              <ShieldCheck className="h-5 text-emerald-400 w-5" />
             </div>
 
             <div>
-              <p className="text-sm font-black tracking-[0.17em] text-white">
+              <p className="font-black text-sm text-white tracking-[0.17em]">
                 SAFESIGN
               </p>
-              <p className="text-[9px] font-semibold uppercase tracking-[0.2em] text-zinc-500">
+              <p className="font-semibold text-[9px] text-zinc-500 tracking-[0.2em] uppercase">
                 Web3 security protocol
               </p>
             </div>
@@ -247,7 +404,7 @@ function HistoryPage() {
 
           <Link
             to="/"
-            className="inline-flex h-10 items-center gap-2 rounded-lg border border-white/10 bg-white/[0.03] px-3 text-xs font-semibold text-zinc-300 transition hover:border-emerald-500/30 hover:text-emerald-300 sm:px-4"
+            className="bg-white/[0.03] border border-white/10 font-semibold gap-2 h-10 hover:border-emerald-500/30 hover:text-emerald-300 inline-flex items-center px-3 rounded-lg sm:px-4 text-xs text-zinc-300 transition"
           >
             <ArrowLeft className="h-4 w-4" />
             <span>Back to scanner</span>
@@ -256,78 +413,78 @@ function HistoryPage() {
 
         {/* Page heading */}
         <section className="mb-8">
-          <div className="mb-3 flex items-center gap-2">
-            <span className="h-px w-6 bg-emerald-500" />
-            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-400">
+          <div className="flex gap-2 items-center mb-3">
+            <span className="bg-emerald-500 h-px w-6" />
+            <span className="font-bold text-[10px] text-emerald-400 tracking-[0.2em] uppercase">
               Local intelligence archive
             </span>
           </div>
 
-          <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+          <div className="flex flex-col gap-4 justify-between sm:flex-row sm:items-end">
             <div>
-              <h1 className="text-3xl font-black tracking-tight text-white sm:text-4xl">
+              <h1 className="font-black sm:text-4xl text-3xl text-white tracking-tight">
                 Report <span className="text-emerald-400">history</span>
               </h1>
 
-              <p className="mt-3 max-w-xl text-sm leading-relaxed text-zinc-400">
+              <p className="leading-relaxed max-w-xl mt-3 text-sm text-zinc-400">
                 Review your previous transaction checks, payment comparisons
                 and token security reports.
               </p>
             </div>
 
-            <div className="flex items-center gap-2 text-xs text-zinc-500">
-              <Database className="h-4 w-4 text-emerald-500" />
+            <div className="flex gap-2 items-center text-xs text-zinc-500">
+              <Database className="h-4 text-emerald-500 w-4" />
               Stored locally on this device
             </div>
           </div>
         </section>
 
         {/* Statistics */}
-        <section className="mb-7 grid grid-cols-2 gap-3 lg:grid-cols-4">
-          <div className="rounded-xl border border-emerald-500/20 bg-gradient-to-br from-emerald-500/[0.10] to-transparent p-4">
-            <div className="mb-3 flex items-center justify-between">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">
+        <section className="gap-3 grid grid-cols-2 lg:grid-cols-4 mb-7">
+          <div className="bg-gradient-to-br border border-emerald-500/20 from-emerald-500/[0.10] p-4 rounded-xl to-transparent">
+            <div className="flex items-center justify-between mb-3">
+              <span className="font-bold text-[10px] text-zinc-400 tracking-wider uppercase">
                 Total reports
               </span>
-              <History className="h-4 w-4 text-emerald-400" />
+              <History className="h-4 text-emerald-400 w-4" />
             </div>
-            <p className="text-3xl font-black tabular-nums text-white">
+            <p className="font-black tabular-nums text-3xl text-white">
               {reports.length}
             </p>
           </div>
 
-          <div className="rounded-xl border border-white/[0.07] bg-white/[0.025] p-4">
-            <div className="mb-3 flex items-center justify-between">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">
+          <div className="bg-white/[0.025] border border-white/[0.07] p-4 rounded-xl">
+            <div className="flex items-center justify-between mb-3">
+              <span className="font-bold text-[10px] text-zinc-500 tracking-wider uppercase">
                 Transactions
               </span>
-              <FileSearch className="h-4 w-4 text-zinc-400" />
+              <FileSearch className="h-4 text-zinc-400 w-4" />
             </div>
-            <p className="text-3xl font-black tabular-nums text-white">
+            <p className="font-black tabular-nums text-3xl text-white">
               {verificationCount}
             </p>
           </div>
 
-          <div className="rounded-xl border border-white/[0.07] bg-white/[0.025] p-4">
-            <div className="mb-3 flex items-center justify-between">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">
+          <div className="bg-white/[0.025] border border-white/[0.07] p-4 rounded-xl">
+            <div className="flex items-center justify-between mb-3">
+              <span className="font-bold text-[10px] text-zinc-500 tracking-wider uppercase">
                 Payment checks
               </span>
-              <ShieldCheck className="h-4 w-4 text-zinc-400" />
+              <ShieldCheck className="h-4 text-zinc-400 w-4" />
             </div>
-            <p className="text-3xl font-black tabular-nums text-white">
+            <p className="font-black tabular-nums text-3xl text-white">
               {matchCount}
             </p>
           </div>
 
-          <div className="rounded-xl border border-white/[0.07] bg-white/[0.025] p-4">
-            <div className="mb-3 flex items-center justify-between">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">
+          <div className="bg-white/[0.025] border border-white/[0.07] p-4 rounded-xl">
+            <div className="flex items-center justify-between mb-3">
+              <span className="font-bold text-[10px] text-zinc-500 tracking-wider uppercase">
                 Token scans
               </span>
-              <ShieldCheck className="h-4 w-4 text-zinc-400" />
+              <ShieldCheck className="h-4 text-zinc-400 w-4" />
             </div>
-            <p className="text-3xl font-black tabular-nums text-white">
+            <p className="font-black tabular-nums text-3xl text-white">
               {tokenCount}
             </p>
           </div>
@@ -336,14 +493,14 @@ function HistoryPage() {
         {/* Search */}
         <section className="mb-5">
           <div className="relative">
-            <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
+            <Search className="-translate-y-1/2 absolute h-4 left-4 pointer-events-none text-zinc-500 top-1/2 w-4" />
 
             <input
               type="search"
               value={search}
               onChange={(event) => setSearch(event.target.value)}
               placeholder="Search by transaction, network, token, or check type..."
-              className="h-12 w-full rounded-xl border border-white/10 bg-[#0c120f] pl-11 pr-11 text-sm text-zinc-200 outline-none transition placeholder:text-zinc-600 focus:border-emerald-500/40 focus:ring-2 focus:ring-emerald-500/10"
+              className="bg-[#0c120f] border border-white/10 focus:border-emerald-500/40 focus:ring-2 focus:ring-emerald-500/10 h-12 outline-none pl-11 placeholder:text-zinc-600 pr-11 rounded-xl text-sm text-zinc-200 transition w-full"
             />
 
             {search && (
@@ -351,7 +508,7 @@ function HistoryPage() {
                 type="button"
                 onClick={() => setSearch("")}
                 aria-label="Clear search"
-                className="absolute right-3 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg text-zinc-500 transition hover:bg-white/5 hover:text-white"
+                className="-translate-y-1/2 absolute flex h-8 hover:bg-white/5 hover:text-white items-center justify-center right-3 rounded-lg text-zinc-500 top-1/2 transition w-8"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -360,10 +517,10 @@ function HistoryPage() {
         </section>
 
         {/* Report list */}
-        <section className="overflow-hidden rounded-2xl border border-white/[0.08] bg-[#0a100d]/90">
-          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/[0.07] px-5 py-4">
+        <section className="bg-[#0a100d]/90 border border-white/[0.08] overflow-hidden rounded-2xl">
+          <div className="border-b border-white/[0.07] flex flex-wrap gap-3 items-center justify-between px-5 py-4">
             <div>
-              <h2 className="text-sm font-bold text-white">
+              <h2 className="font-bold text-sm text-white">
                 Saved reports
               </h2>
               <p className="mt-1 text-[11px] text-zinc-500">
@@ -372,38 +529,38 @@ function HistoryPage() {
               </p>
             </div>
 
-            <span className="rounded-full border border-emerald-500/20 bg-emerald-500/[0.07] px-3 py-1 text-[9px] font-bold uppercase tracking-wider text-emerald-400">
+            <span className="bg-emerald-500/[0.07] border border-emerald-500/20 font-bold px-3 py-1 rounded-full text-[9px] text-emerald-400 tracking-wider uppercase">
               IndexedDB archive
             </span>
           </div>
 
           {loading ? (
-            <div className="flex min-h-56 flex-col items-center justify-center gap-3 p-8 text-center">
-              <div className="h-7 w-7 animate-spin rounded-full border-2 border-emerald-500/20 border-t-emerald-400" />
+            <div className="flex flex-col gap-3 items-center justify-center min-h-56 p-8 text-center">
+              <div className="animate-spin border-2 border-emerald-500/20 border-t-emerald-400 h-7 rounded-full w-7" />
               <p className="text-sm text-zinc-500">
                 Loading your saved reports...
               </p>
             </div>
           ) : loadError ? (
             <div className="p-8 text-center">
-              <AlertTriangle className="mx-auto mb-3 h-7 w-7 text-amber-400" />
-              <p className="text-sm text-amber-300">{loadError}</p>
+              <AlertTriangle className="h-7 mb-3 mx-auto text-amber-400 w-7" />
+              <p className="text-amber-300 text-sm">{loadError}</p>
             </div>
           ) : filteredReports.length === 0 ? (
-            <div className="flex min-h-64 flex-col items-center justify-center px-6 py-12 text-center">
-              <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-emerald-500/20 bg-emerald-500/[0.07]">
+            <div className="flex flex-col items-center justify-center min-h-64 px-6 py-12 text-center">
+              <div className="bg-emerald-500/[0.07] border border-emerald-500/20 flex h-14 items-center justify-center mb-4 rounded-2xl w-14">
                 {search ? (
-                  <Search className="h-6 w-6 text-emerald-400" />
+                  <Search className="h-6 text-emerald-400 w-6" />
                 ) : (
-                  <History className="h-6 w-6 text-emerald-400" />
+                  <History className="h-6 text-emerald-400 w-6" />
                 )}
               </div>
 
-              <h3 className="text-base font-bold text-white">
+              <h3 className="font-bold text-base text-white">
                 {search ? "No matching reports" : "Your archive is empty"}
               </h3>
 
-              <p className="mt-2 max-w-sm text-xs leading-relaxed text-zinc-500">
+              <p className="leading-relaxed max-w-sm mt-2 text-xs text-zinc-500">
                 {search
                   ? "Try a different search term or clear your search."
                   : "Completed checks will automatically appear here. Run a transaction verification or token security check to get started."}
@@ -413,14 +570,14 @@ function HistoryPage() {
                 <button
                   type="button"
                   onClick={() => setSearch("")}
-                  className="mt-5 rounded-lg border border-emerald-500/25 px-4 py-2 text-xs font-bold text-emerald-400 transition hover:bg-emerald-500/10"
+                  className="border border-emerald-500/25 font-bold hover:bg-emerald-500/10 mt-5 px-4 py-2 rounded-lg text-emerald-400 text-xs transition"
                 >
                   Clear search
                 </button>
               ) : (
                 <Link
                   to="/"
-                  className="mt-5 inline-flex items-center gap-2 rounded-lg bg-emerald-500 px-4 py-2.5 text-xs font-bold text-[#04100a] transition hover:bg-emerald-400"
+                  className="bg-emerald-500 font-bold gap-2 hover:bg-emerald-400 inline-flex items-center mt-5 px-4 py-2.5 rounded-lg text-[#04100a] text-xs transition"
                 >
                   Start a security check
                   <ArrowUpRight className="h-4 w-4" />
@@ -428,7 +585,7 @@ function HistoryPage() {
               )}
             </div>
           ) : (
-            <div className="divide-y divide-white/[0.06]">
+            <div className="divide-white/[0.06] divide-y">
               {filteredReports.map((report) => {
                 const status = getReportStatus(report);
                 const appearance = getStatusAppearance(status);
@@ -441,22 +598,22 @@ function HistoryPage() {
                       isSelected ? "bg-emerald-500/[0.045]" : "hover:bg-white/[0.02]"
                     }`}
                   >
-                    <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
-                      <div className="flex min-w-0 gap-3">
-                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-emerald-500/15 bg-emerald-500/[0.07]">
+                    <div className="flex flex-col gap-4 justify-between sm:flex-row sm:items-center">
+                      <div className="flex gap-3 min-w-0">
+                        <div className="bg-emerald-500/[0.07] border border-emerald-500/15 flex h-10 items-center justify-center rounded-xl shrink-0 w-10">
                           {report.mode === "token" ? (
-                            <ShieldCheck className="h-5 w-5 text-emerald-400" />
+                            <ShieldCheck className="h-5 text-emerald-400 w-5" />
                           ) : (
-                            <FileSearch className="h-5 w-5 text-emerald-400" />
+                            <FileSearch className="h-5 text-emerald-400 w-5" />
                           )}
                         </div>
 
-                        <div className="min-w-0 flex-1">
-                          <h3 className="truncate text-sm font-bold text-zinc-100">
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-bold text-sm text-zinc-100 truncate">
                             {report.title || getModeLabel(report.mode)}
                           </h3>
 
-                          <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] text-zinc-500">
+                          <div className="flex flex-wrap gap-x-3 gap-y-1 items-center mt-1.5 text-[10px] text-zinc-500">
                             <span>{getModeLabel(report.mode)}</span>
                             <span className="text-zinc-700">•</span>
                             <span className="uppercase">
@@ -464,7 +621,7 @@ function HistoryPage() {
                             </span>
                           </div>
 
-                          <div className="mt-2 flex flex-wrap items-center gap-2">
+                          <div className="flex flex-wrap gap-2 items-center mt-2">
                             <span
                               className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-1 text-[9px] font-bold uppercase tracking-wider ${appearance.style}`}
                             >
@@ -472,27 +629,27 @@ function HistoryPage() {
                               {appearance.label}
                             </span>
 
-                            <span className="inline-flex items-center gap-1 text-[10px] text-zinc-600">
+                            <span className="gap-1 inline-flex items-center text-[10px] text-zinc-600">
                               <Clock3 className="h-3 w-3" />
                               {formatDate(report.createdAt)}
                             </span>
                           </div>
 
                           {report.searchText && (
-                            <p className="mt-2 truncate font-mono text-[10px] text-zinc-600">
+                            <p className="font-mono mt-2 text-[10px] text-zinc-600 truncate">
                               {report.searchText}
                             </p>
                           )}
                         </div>
                       </div>
 
-                      <div className="flex shrink-0 items-center gap-2 pl-[52px] sm:pl-0">
+                      <div className="flex gap-2 items-center pl-[52px] shrink-0 sm:pl-0">
                         <button
                           type="button"
                           onClick={() =>
                             setSelected(isSelected ? null : report)
                           }
-                          className="inline-flex h-9 items-center gap-2 rounded-lg border border-emerald-500/25 bg-emerald-500/[0.07] px-3 text-[10px] font-bold text-emerald-300 transition hover:bg-emerald-500/[0.15]"
+                          className="bg-emerald-500/[0.07] border border-emerald-500/25 font-bold gap-2 h-9 hover:bg-emerald-500/[0.15] inline-flex items-center px-3 rounded-lg text-[10px] text-emerald-300 transition"
                         >
                           {isSelected ? "Close report" : "View report"}
                           {isSelected ? (
@@ -504,9 +661,12 @@ function HistoryPage() {
 
                         <button
                           type="button"
-                          onClick={() => void handleDelete(report)}
+                          oonClick={() => {
+                            setDeleteError("");
+                            setDeleteTarget(report);
+                          }}
                           aria-label={`Delete ${report.title || "saved report"}`}
-                          className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/[0.07] text-zinc-500 transition hover:border-red-500/30 hover:bg-red-500/10 hover:text-red-300"
+                          className="border border-white/[0.07] flex h-9 hover:bg-red-500/10 hover:border-red-500/30 hover:text-red-300 items-center justify-center rounded-lg text-zinc-500 transition w-9"
                         >
                           <Trash2 className="h-4 w-4" />
                         </button>
@@ -514,12 +674,16 @@ function HistoryPage() {
                     </div>
 
                     {isSelected && (
-                      <div className="mt-5 border-t border-emerald-500/10 pt-5">
-                        <CheckResult
-                          response={report.response}
-                          mode={report.mode}
-                          language={language}
-                        />
+                      <div className="border-emerald-500/10 border-t mt-5 pt-5">
+                        {report.mode === "link" ? (
+                          <LinkHistoryResult response={report.response} />
+                        ) : (
+                          <CheckResult
+                            response={report.response}
+                            mode={report.mode}
+                            language={language}
+                          />
+                        )}
                       </div>
                     )}
                   </article>
@@ -529,7 +693,82 @@ function HistoryPage() {
           )}
         </section>
 
-        <footer className="mt-8 flex flex-col items-center justify-between gap-2 border-t border-white/[0.06] py-5 text-[9px] font-semibold uppercase tracking-[0.15em] text-zinc-600 sm:flex-row">
+          {deleteTarget && (
+  <div className="backdrop-blur-sm bg-black/75 fixed flex inset-0 items-center justify-center p-4 z-50">
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="delete-dialog-title"
+      className="bg-[#0b110e] border border-white/10 max-w-md p-6 rounded-2xl shadow-2xl w-full"
+    >
+      <div className="flex gap-4 items-start justify-between">
+        <div className="bg-red-500/10 border border-red-500/20 flex h-11 items-center justify-center rounded-xl w-11">
+          <Trash2 className="h-5 text-red-400 w-5" />
+        </div>
+
+        <button
+          type="button"
+          onClick={() => {
+            setDeleteTarget(null);
+            setDeleteError("");
+          }}
+          disabled={deleting}
+          aria-label="Close confirmation"
+          className="hover:bg-white/5 hover:text-white p-2 rounded-lg text-zinc-500"
+        >
+          <X className="h-4 w-4" />
+        </button>
+      </div>
+
+      <h2
+        id="delete-dialog-title"
+        className="font-bold mt-5 text-lg text-white"
+      >
+        Delete this report?
+      </h2>
+
+      <p className="break-words mt-2 text-sm text-zinc-400">
+        {deleteTarget.title || getModeLabel(deleteTarget.mode)}
+      </p>
+
+      <p className="leading-5 mt-2 text-xs text-zinc-500">
+        This report will be permanently removed from this device.
+        This action cannot be undone.
+      </p>
+
+      {deleteError && (
+        <p className="bg-red-500/[0.06] border border-red-500/20 mt-4 p-3 rounded-lg text-red-300 text-xs">
+          {deleteError}
+        </p>
+      )}
+
+      <div className="flex gap-3 justify-end mt-6">
+        <button
+          type="button"
+          disabled={deleting}
+          onClick={() => {
+            setDeleteTarget(null);
+            setDeleteError("");
+          }}
+          className="border border-white/10 disabled:opacity-50 font-semibold hover:bg-white/5 px-4 py-2.5 rounded-lg text-xs text-zinc-300"
+        >
+          Cancel
+        </button>
+
+        <button
+          type="button"
+          disabled={deleting}
+          onClick={() => void handleDelete()}
+          className="bg-red-500 disabled:opacity-50 font-bold gap-2 hover:bg-red-400 inline-flex items-center px-4 py-2.5 rounded-lg text-white text-xs"
+        >
+          <Trash2 className="h-3.5 w-3.5" />
+          {deleting ? "Deleting..." : "Delete report"}
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+        <footer className="border-t border-white/[0.06] flex flex-col font-semibold gap-2 items-center justify-between mt-8 py-5 sm:flex-row text-[9px] text-zinc-600 tracking-[0.15em] uppercase">
           <span>SafeSign · Web3 Security Protocol</span>
           <span>Private local report storage</span>
         </footer>

@@ -1,6 +1,6 @@
 
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import {
   AlertTriangle,
   ArrowLeft,
@@ -197,6 +197,7 @@ function LinkScannerPage() {
   const [polling, setPolling] = useState(false);
   const [error, setError] = useState("");
   const [pollError, setPollError] = useState("");
+  const reportCreatedAt = useRef("");
 
   useEffect(() => {
     const savedLanguage = localStorage.getItem("safesign-language");
@@ -228,8 +229,8 @@ function LinkScannerPage() {
         );
 
         if (!active || !response.report) return;
-
         setReport(response.report);
+        persistLinkReport(response.report, "URL scan analysis updated.");
         setPollError("");
 
         if (!isAnalysisComplete(response.report.status)) {
@@ -261,7 +262,26 @@ function LinkScannerPage() {
     setLanguage(nextLanguage);
     localStorage.setItem("safesign-language", nextLanguage);
   };
-
+  const persistLinkReport = (
+    nextReport: LinkReport,
+    message = "URL scan result updated.",
+  ) => {
+    void saveReport({
+      id: `link-${nextReport.analysisId}`,
+      mode: "link",
+      network: "web",
+      title: "URL security scan",
+      searchText: nextReport.submittedUrl || url,
+      createdAt: reportCreatedAt.current || new Date().toISOString(), ,
+      response: {
+        success: true,
+        message,
+        report: nextReport,
+      },
+    }).catch((err) => {
+      console.error("Could not update URL scan history:", err);
+    });
+  };
   const handleScan = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
@@ -271,6 +291,7 @@ function LinkScannerPage() {
       setError("Enter a URL to scan.");
       return;
     }
+    
 
     try {
       const parsedUrl = new URL(submittedUrl);
@@ -289,6 +310,8 @@ function LinkScannerPage() {
     setPollError("");
     setReport(null);
 
+    reportCreatedAt.current = new Date().toISOString();
+
     try {
       const response = await requestApi("/api/links/scan", {
         method: "POST",
@@ -301,21 +324,10 @@ function LinkScannerPage() {
 
       setReport(response.report);
 
-      void saveReport({
-        id: `link-${response.report.analysisId}`,
-        mode: "link",
-        network: "web",
-        title: "URL security scan",
-        searchText: submittedUrl,
-        createdAt: new Date().toISOString(),
-        response: {
-          success: true,
-          message: response.message || "URL scan submitted.",
-          report: response.report,
-        },
-      }).catch((err) => {
-        console.error("Could not save URL scan to history:", err);
-      });
+      persistLinkReport(
+  response.report,
+  response.message || "URL scan submitted.",
+);
     } catch (err) {
       setError(
         err instanceof Error
@@ -344,6 +356,8 @@ function LinkScannerPage() {
 
       if (response.report) {
         setReport(response.report);
+        persistLinkReport(response.report, "URL scan analysis updated.");
+        setPolling(!isAnalysisComplete(response.report.status));
       }
     } catch (err) {
       setPollError(
