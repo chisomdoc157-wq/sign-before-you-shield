@@ -82,7 +82,8 @@ function getReportStatus(report: SavedReport) {
 }
 
 function getStatusAppearance(status: string) {
-  if [
+  if (
+  [
     "MATCHED",
     "SUCCESS",
     "SUCCESSFUL",
@@ -90,13 +91,13 @@ function getStatusAppearance(status: string) {
     "CONFIRMED",
     "NO_KNOWN_THREATS",
   ].includes(status)
-  ) {
-    return {
-      label: status.replace(/_/g, " "),
-      style: "border-emerald-500/25 bg-emerald-500/10 text-emerald-300",
-      dot: "bg-emerald-400",
-    };
-  }
+) {
+  return {
+    label: status.replace(/_/g, " "),
+    style: "border-emerald-500/25 bg-emerald-500/10 text-emerald-300",
+    dot: "bg-emerald-400",
+  };
+}
 
   if (
     [
