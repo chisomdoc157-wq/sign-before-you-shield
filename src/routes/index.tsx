@@ -701,7 +701,8 @@ function Index() {
                 <div className="border-b border-white/[0.06] flex items-center justify-between mb-4 pb-3">
                   <div className="flex gap-2 items-center">
                     <span className="bg-red-400/80 rounded-full size-2" />
-                    2" />
+                    <span className="bg-yellow-400/80 rounded-full size-2" />
+                    <span className="bg-emerald-400/80 rounded-full size-2" />
                     <span className="font-semibold ml-2 text-[9px] text-gray-500 tracking-[0.2em] uppercase">
                       SAFESIGN / CHECK
                     </span>
@@ -734,7 +735,7 @@ function Index() {
                     Wallet Check
                     <ArrowUpRight className="size-3.5" />
                   </Link>
-                  
+
                   <Link
                     to="/history"
                     className="bg-white/[0.035] border border-white/10 font-semibold gap-2 group hover:bg-emerald-500/[0.07] hover:border-emerald-500/40 hover:text-emerald-300 inline-flex items-center px-4 py-2.5 rounded-lg text-gray-300 text-xs transition-all"
