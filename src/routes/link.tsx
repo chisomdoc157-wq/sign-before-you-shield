@@ -22,7 +22,7 @@ import type { Language } from "@/components/safesign/language";
 
 import { saveReport } from "@/lib/safesign-storage";
 
-export const Route = createFileRoute("/links")({
+export const Route = createFileRoute("/link")({
   component: LinkScannerPage,
 });
 
