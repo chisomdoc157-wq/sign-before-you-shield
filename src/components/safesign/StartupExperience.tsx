@@ -10,7 +10,7 @@ import {
 
 type StartupMode = "boot" | "cinematic" | "loader" | "ready";
 
-const INTRO_REPEAT_AFTER_MS = 30 * 60 * 1000;
+const INTRO_REPEAT_AFTER_MS =30 * 60 * 1000;
 const INTRO_STORAGE_KEY = "safesign-last-cinematic-intro";
 const LEGACY_INTRO_KEY = "safesign-intro-seen-v1";
 
@@ -141,7 +141,7 @@ export function StartupExperience({
         }}
       />
 
-      {#if isCinematic}
+        {isCinematic && (
       <div className="absolute inset-0 overflow-hidden">
         {Array.from({ length: 24 }, (_, index) => (
           <motion.span
@@ -168,7 +168,7 @@ export function StartupExperience({
           />
         ))}
       </div>
-      {/if}
+      )}
 
       <div className="flex flex-col items-center max-w-xl px-6 relative text-center w-full z-10">
         {/* Cinematic shield */}
