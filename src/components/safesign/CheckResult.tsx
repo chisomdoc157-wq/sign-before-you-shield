@@ -23,41 +23,7 @@ interface CheckResultProps {
   language: Language;
 }
 
-const resultCopy: Record<
-  "en" | "pcm",
-  {
-    result: string;
-    status: string;
-    transaction: string;
-    token: string;
-    payment: string;
-    details: string;
-    rawResponse: string;
-    copy: string;
-    copied: string;
-    print: string;
-    matched: string;
-    mismatched: string;
-    pending: string;
-    confirming: string;
-    notFound: string;
-    unverifiable: string;
-    trusted: string;
-    unverified: string;
-    riskDetected: string;
-    noRiskFlags: string;
-    partialData: string;
-    noData: string;
-    success: string;
-    failed: string;
-    unknown: string;
-    yes: string;
-    no: string;
-    nativeTransfers: string;
-    tokenTransfers: string;
-    nativeTransfer: string;
-  }
-> = {
+const resultCopy = {
   en: {
     result: "Check result",
     status: "Status",
@@ -65,7 +31,6 @@ const resultCopy: Record<
     token: "Token security details",
     payment: "Payment comparison",
     details: "Report details",
-    rawResponse: "Full API response",
     copy: "Copy report",
     copied: "Copied",
     print: "Print report",
@@ -84,8 +49,6 @@ const resultCopy: Record<
     success: "Successful",
     failed: "Failed",
     unknown: "Unknown",
-    yes: "Yes",
-    no: "No",
     nativeTransfers: "Native currency transfers",
     tokenTransfers: "Token transfers",
     nativeTransfer: "Top-level native transfer",
@@ -97,7 +60,6 @@ const resultCopy: Record<
     token: "Token security details",
     payment: "Payment comparison",
     details: "Report details",
-    rawResponse: "Full API response",
     copy: "Copy report",
     copied: "Don copy",
     print: "Print report",
@@ -116,8 +78,6 @@ const resultCopy: Record<
     success: "Successful",
     failed: "Failed",
     unknown: "Unknown",
-    yes: "Yes",
-    no: "No",
     nativeTransfers: "Native currency transfers",
     tokenTransfers: "Token transfers",
     nativeTransfer: "Main native transfer",
@@ -151,7 +111,7 @@ function displayValue(value: unknown): string {
   }
 
   if (typeof value === "object") {
-    return JSON.stringify(value, null, 2);
+    return "—";
   }
 
   return String(value);
@@ -159,13 +119,9 @@ function displayValue(value: unknown): string {
 
 function getStatus(response: Record<string, unknown>) {
   const report = isObject(response.report) ? response.report : {};
-
-  const result = isObject(response.result)
-    ? response.result
-    : {};
+  const result = isObject(response.result) ? response.result : {};
 
   const candidates = [
-    response.result,
     response.status,
     response.matchStatus,
     result.status,
@@ -188,10 +144,7 @@ function getStatus(response: Record<string, unknown>) {
   return "UNKNOWN";
 }
 
-function getStatusLabel(
-  status: string,
-  copy: (typeof resultCopy)["en"],
-) {
+function getStatusLabel(status: string, copy: typeof resultCopy.en) {
   const labels: Record<string, string> = {
     MATCHED: copy.matched,
     MISMATCHED: copy.mismatched,
@@ -241,8 +194,7 @@ function getStatusStyle(status: string) {
 
   if (goodStatuses.includes(status)) {
     return {
-      className:
-        "border-emerald-500/30 bg-emerald-500/10 text-emerald-300",
+      className: "border-emerald-500/30 bg-emerald-500/10 text-emerald-300",
       icon: CheckCircle2,
       indicator: "bg-emerald-400",
     };
@@ -250,8 +202,7 @@ function getStatusStyle(status: string) {
 
   if (badStatuses.includes(status)) {
     return {
-      className:
-        "border-red-500/30 bg-red-500/10 text-red-300",
+      className: "border-red-500/30 bg-red-500/10 text-red-300",
       icon: XCircle,
       indicator: "bg-red-400",
     };
@@ -273,8 +224,7 @@ function getStatusStyle(status: string) {
     ].includes(status)
   ) {
     return {
-      className:
-        "border-amber-500/30 bg-amber-500/10 text-amber-300",
+      className: "border-amber-500/30 bg-amber-500/10 text-amber-300",
       icon: AlertTriangle,
       indicator: "bg-amber-400",
     };
@@ -369,15 +319,15 @@ function DataSection({
               className="bg-white/[0.02] border border-white/[0.06] p-3 rounded-lg"
             >
               <p className="font-semibold mb-2 text-xs text-zinc-500">
-                Item {index + 1}
+                Transfer {index + 1}
               </p>
 
               {isObject(item) ? (
                 <FieldList data={item} />
               ) : (
-                <pre className="break-all overflow-x-auto text-xs text-zinc-300 whitespace-pre-wrap">
+                <p className="break-all text-xs text-zinc-300">
                   {displayValue(item)}
-                </pre>
+                </p>
               )}
             </div>
           ))}
@@ -385,9 +335,9 @@ function DataSection({
       ) : isObject(data) ? (
         <FieldList data={data} />
       ) : (
-        <pre className="break-all overflow-x-auto text-xs text-zinc-300 whitespace-pre-wrap">
+        <p className="break-all text-xs text-zinc-300">
           {displayValue(data)}
-        </pre>
+        </p>
       )}
     </section>
   );
@@ -398,26 +348,144 @@ function TransactionTransferSections({
   copy,
 }: {
   report: Record<string, unknown>;
-  copy: (typeof resultCopy)["en"];
+  copy: typeof resultCopy.en;
 }) {
   return (
     <>
-      <DataSection
-        title={copy.nativeTransfer}
-        data={report.nativeTransfer}
-      />
-
-      <DataSection
-        title={copy.nativeTransfers}
-        data={report.nativeTransfers}
-      />
-
-      <DataSection
-        title={copy.tokenTransfers}
-        data={report.tokenTransfers}
-      />
+      <DataSection title={copy.nativeTransfer} data={report.nativeTransfer} />
+      <DataSection title={copy.nativeTransfers} data={report.nativeTransfers} />
+      <DataSection title={copy.tokenTransfers} data={report.tokenTransfers} />
     </>
   );
+}
+
+/* Builds a readable report for copying, never raw API JSON. */
+function buildReadableReport({
+  mode,
+  status,
+  message,
+  report,
+  comparison,
+  riskFlags,
+  copy,
+}: {
+  mode: CheckMode;
+  status: string;
+  message: string;
+  report: Record<string, unknown>;
+  comparison: Record<string, unknown> | null;
+  riskFlags: unknown;
+  copy: typeof resultCopy.en;
+}) {
+  const lines = [
+    "SAFESIGN — SECURITY REPORT",
+    `Report type: ${humanize(mode)}`,
+    `Status: ${getStatusLabel(status, copy)}`,
+    "",
+  ];
+
+  if (message) {
+    lines.push("SUMMARY", message, "");
+  }
+
+  const addFields = (
+    heading: string,
+    data: Record<string, unknown> | null,
+    omit = OMIT_KEYS,
+  ) => {
+    if (!data) return;
+
+    const entries = Object.entries(data).filter(
+      ([key, value]) =>
+        !omit.has(key) &&
+        value !== null &&
+        value !== undefined &&
+        typeof value !== "object",
+    );
+
+    if (!entries.length) return;
+
+    lines.push(heading);
+
+    for (const [key, value] of entries) {
+      lines.push(`${humanize(key)}: ${displayValue(value)}`);
+    }
+
+    lines.push("");
+  };
+
+  if (mode === "match") {
+    addFields("PAYMENT COMPARISON", comparison, new Set());
+  }
+
+  if (mode === "token" && isObject(report.token)) {
+    addFields("TOKEN DETAILS", report.token, new Set([
+      "riskFlags",
+      "securityData",
+    ]));
+  }
+
+  addFields(
+    mode === "token"
+      ? "TOKEN SECURITY REPORT"
+      : "TRANSACTION DETAILS",
+    report,
+    new Set([
+      ...OMIT_KEYS,
+      "comparison",
+      "token",
+      "riskFlags",
+      "securityData",
+      "nativeTransfer",
+      "nativeTransfers",
+      "tokenTransfers",
+    ]),
+  );
+
+  if (mode !== "token") {
+    const transferSections = [
+      ["NATIVE TRANSFER", report.nativeTransfer],
+      ["NATIVE CURRENCY TRANSFERS", report.nativeTransfers],
+      ["TOKEN TRANSFERS", report.tokenTransfers],
+    ] as const;
+
+    for (const [heading, data] of transferSections) {
+      if (Array.isArray(data)) {
+        data.forEach((item, index) => {
+          if (isObject(item)) {
+            addFields(`${heading} — ${index + 1}`, item, new Set());
+          }
+        });
+      } else if (isObject(data)) {
+        addFields(heading, data, new Set());
+      }
+    }
+  }
+
+  if (Array.isArray(riskFlags) && riskFlags.length > 0) {
+    lines.push("SECURITY FINDINGS");
+
+    riskFlags.forEach((flag) => {
+      if (isObject(flag)) {
+        const label =
+          typeof flag.label === "string"
+            ? flag.label
+            : typeof flag.code === "string"
+              ? humanize(flag.code)
+              : "Security finding";
+
+        lines.push(`- ${label}`);
+      } else if (typeof flag === "string") {
+        lines.push(`- ${humanize(flag)}`);
+      }
+    });
+
+    lines.push("");
+  }
+
+  lines.push("Generated by SafeSign — Web3 Security Protocol");
+
+  return lines.join("\n");
 }
 
 export default function CheckResult({
@@ -426,12 +494,9 @@ export default function CheckResult({
   language,
 }: CheckResultProps) {
   const copy = resultCopy[language === "pcm" ? "pcm" : "en"];
-
   const [hasCopied, setHasCopied] = useState(false);
 
-  const report = isObject(response.report)
-    ? response.report
-    : {};
+  const report = isObject(response.report) ? response.report : {};
 
   const resultObject = isObject(response.result)
     ? response.result
@@ -445,24 +510,23 @@ export default function CheckResult({
         ? resultObject.comparison
         : null;
 
-  const token = isObject(report.token)
-    ? report.token
-    : null;
+  const token = isObject(report.token) ? report.token : null;
 
   const riskFlags =
     report.riskFlags ??
     response.riskFlags ??
     (token ? token.riskFlags : undefined);
 
-  const securityData =
-    report.securityData ??
-    response.securityData ??
-    (token ? token.securityData : undefined);
-
   const status = getStatus(response);
   const statusStyle = getStatusStyle(status);
-
   const StatusIcon = statusStyle.icon;
+
+  const message =
+    typeof response.message === "string"
+      ? response.message
+      : typeof report.message === "string"
+        ? report.message
+        : "";
 
   const reportForDisplay = {
     ...report,
@@ -472,16 +536,15 @@ export default function CheckResult({
   };
 
   async function copyReport() {
-    const reportText = [
-      "SAFESIGN — SECURITY REPORT",
-      `Check type: ${humanize(mode)}`,
-      `Status: ${getStatusLabel(status, copy)}`,
-      "",
-      "FULL API RESPONSE",
-      JSON.stringify(response, null, 2),
-      "",
-      "Generated by SafeSign",
-    ].join("\n");
+    const reportText = buildReadableReport({
+      mode,
+      status,
+      message,
+      report,
+      comparison,
+      riskFlags,
+      copy,
+    });
 
     try {
       if (navigator.clipboard?.writeText) {
@@ -504,7 +567,6 @@ export default function CheckResult({
         textarea.select();
 
         const successful = document.execCommand("copy");
-
         document.body.removeChild(textarea);
 
         if (!successful) {
@@ -527,6 +589,92 @@ export default function CheckResult({
 
   return (
     <div className="space-y-4">
+      {/* Only this report card is printed. */}
+      <style>{`
+        @page {
+          size: auto;
+          margin: 16mm;
+        }
+
+        @media print {
+          body * {
+            visibility: hidden !important;
+          }
+
+          .safesign-report-print,
+          .safesign-report-print * {
+            visibility: visible !important;
+          }
+
+          .safesign-report-print {
+            position: absolute !important;
+            left: 0 !important;
+            top: 0 !important;
+            width: 100% !important;
+            max-width: none !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            background: white !important;
+            color: #111827 !important;
+            border: none !important;
+            border-radius: 0 !important;
+            box-shadow: none !important;
+            overflow: visible !important;
+          }
+
+          .safesign-report-print * {
+            color: #111827 !important;
+            text-shadow: none !important;
+            box-shadow: none !important;
+            border-color: #d1d5db !important;
+          }
+
+          .safesign-report-print .text-emerald-400,
+          .safesign-report-print .text-emerald-300 {
+            color: #047857 !important;
+          }
+
+          .safesign-report-print .text-red-300,
+          .safesign-report-print .text-red-400 {
+            color: #b91c1c !important;
+          }
+
+          .safesign-report-print .text-amber-300,
+          .safesign-report-print .text-amber-400 {
+            color: #92400e !important;
+          }
+
+          .safesign-report-print .bg-\\[\\#090e0c\\],
+          .safesign-report-print .bg-\\[\\#080d0b\\],
+          .safesign-report-print .bg-\\[\\#0b110e\\],
+          .safesign-report-print .bg-black\\/30,
+          .safesign-report-print .bg-white\\/\\[0\\.02\\] {
+            background: white !important;
+          }
+
+          .safesign-report-actions,
+          .safesign-report-print button,
+          .safesign-report-print summary {
+            display: none !important;
+          }
+
+          .safesign-report-print section,
+          .safesign-report-print dl,
+          .safesign-report-print .rounded-xl {
+            break-inside: avoid;
+          }
+
+          .safesign-report-print .break-all {
+            overflow-wrap: anywhere !important;
+          }
+
+          .safesign-report-print .max-h-\\[500px\\] {
+            max-height: none !important;
+            overflow: visible !important;
+          }
+        }
+      `}</style>
+
       <div className="bg-[#090e0c] border border-emerald-500/15 overflow-hidden rounded-2xl safesign-report-print shadow-[0_20px_80px_rgba(0,0,0,0.3)]">
 
         {/* Report header */}
@@ -544,7 +692,6 @@ export default function CheckResult({
                   <p className="font-black text-sm text-white tracking-[0.16em]">
                     SAFESIGN
                   </p>
-
                   <p className="font-semibold text-[9px] text-zinc-500 tracking-[0.2em] uppercase">
                     Security intelligence
                   </p>
@@ -560,26 +707,20 @@ export default function CheckResult({
 
             <div className="flex gap-2 items-center mb-4">
               <span className="bg-emerald-500/60 h-px w-6" />
-
               <span className="font-bold text-[10px] text-zinc-500 tracking-[0.17em] uppercase">
                 {modeLabel}
               </span>
             </div>
 
             {/* Status */}
-            <div
-              className={`flex items-start gap-4 rounded-xl border p-4 sm:p-5 ${statusStyle.className}`}
-            >
+            <div className={`flex items-start gap-4 rounded-xl border p-4 sm:p-5 ${statusStyle.className}`}>
               <div className="bg-black/20 border border-current/20 flex h-11 items-center justify-center rounded-xl shrink-0 w-11">
                 <StatusIcon className="h-6 w-6" />
               </div>
 
               <div className="flex-1 min-w-0">
                 <div className="flex gap-2 items-center mb-1">
-                  <span
-                    className={`h-1.5 w-1.5 rounded-full ${statusStyle.indicator}`}
-                  />
-
+                  <span className={`h-1.5 w-1.5 rounded-full ${statusStyle.indicator}`} />
                   <p className="font-bold opacity-75 text-[10px] tracking-[0.15em] uppercase">
                     {copy.status}
                   </p>
@@ -589,9 +730,9 @@ export default function CheckResult({
                   {getStatusLabel(status, copy)}
                 </h3>
 
-                {typeof response.message === "string" && (
+                {message && (
                   <p className="leading-relaxed mt-2 opacity-80 text-sm">
-                    {response.message}
+                    {message}
                   </p>
                 )}
               </div>
@@ -599,7 +740,7 @@ export default function CheckResult({
           </div>
         </div>
 
-        {/* Report content */}
+        {/* Readable report content */}
         <div className="p-5 sm:p-6 space-y-6">
 
           {/* Transaction verification */}
@@ -611,16 +752,10 @@ export default function CheckResult({
               </h4>
 
               <div className="bg-[#080d0b] border border-white/[0.07] px-4 rounded-xl">
-                <FieldList
-                  data={report}
-                  omit={OMIT_KEYS}
-                />
+                <FieldList data={report} omit={OMIT_KEYS} />
               </div>
 
-              <TransactionTransferSections
-                report={report}
-                copy={copy}
-              />
+              <TransactionTransferSections report={report} copy={copy} />
             </section>
           )}
 
@@ -641,12 +776,7 @@ export default function CheckResult({
               <div className="bg-[#080d0b] border border-white/[0.07] px-4 rounded-xl">
                 <FieldList
                   data={reportForDisplay}
-                  omit={
-                    new Set([
-                      ...OMIT_KEYS,
-                      "comparison",
-                    ])
-                  }
+                  omit={new Set([...OMIT_KEYS, "comparison"])}
                 />
               </div>
 
@@ -657,17 +787,13 @@ export default function CheckResult({
                 />
               )}
 
-              <TransactionTransferSections
-                report={report}
-                copy={copy}
-              />
+              <TransactionTransferSections report={report} copy={copy} />
 
               {typeof response.assetAuthenticity === "string" && (
                 <div className="bg-amber-500/[0.06] border border-amber-500/25 p-4 rounded-xl">
                   <p className="font-bold text-amber-400 text-xs tracking-wider uppercase">
                     Asset authenticity
                   </p>
-
                   <p className="font-semibold mt-2 text-amber-200 text-sm">
                     {humanize(response.assetAuthenticity)}
                   </p>
@@ -693,41 +819,30 @@ export default function CheckResult({
               <div className="bg-[#080d0b] border border-white/[0.07] px-4 rounded-xl">
                 <FieldList
                   data={report}
-                  omit={
-                    new Set([
-                      ...OMIT_KEYS,
-                      "token",
-                      "riskFlags",
-                      "securityData",
-                    ])
-                  }
+                  omit={new Set([
+                    ...OMIT_KEYS,
+                    "token",
+                    "riskFlags",
+                    "securityData",
+                  ])}
                 />
               </div>
 
-              <DataSection
-                title="Risk flags"
-                data={riskFlags}
-              />
+              <DataSection title="Risk flags" data={riskFlags} />
 
-              <DataSection
-                title="Security data"
-                data={securityData}
-              />
+              {/* Provider securityData is intentionally not displayed. */}
 
               {status === "NO_RISK_FLAGS_RETURNED" && (
                 <div className="bg-amber-500/[0.07] border border-amber-500/25 flex gap-3 p-4 rounded-xl text-amber-300">
                   <AlertTriangle className="h-5 mt-0.5 shrink-0 w-5" />
-
                   <div>
                     <p className="font-bold text-sm">
                       No risk flags returned
                     </p>
-
                     <p className="leading-relaxed mt-1 text-amber-200/75 text-xs">
-                      No risk flags were returned by the security
-                      provider. This does not prove that the token
-                      is safe or authentic. Always review the
-                      available security indicators.
+                      No risk flags were returned by the security provider.
+                      This does not prove that the token is safe or authentic.
+                      Always review the available security indicators.
                     </p>
                   </div>
                 </div>
@@ -736,17 +851,14 @@ export default function CheckResult({
               {status === "NO_DATA" && (
                 <div className="bg-amber-500/[0.07] border border-amber-500/25 flex gap-3 p-4 rounded-xl text-amber-300">
                   <AlertTriangle className="h-5 mt-0.5 shrink-0 w-5" />
-
                   <div>
                     <p className="font-bold text-sm">
                       Security information unavailable
                     </p>
-
                     <p className="leading-relaxed mt-1 text-amber-200/75 text-xs">
-                      The security provider returned no security
-                      record for this contract. The absence of
-                      information must not be interpreted as proof
-                      of safety.
+                      The security provider returned no security record for
+                      this contract. The absence of information must not be
+                      interpreted as proof of safety.
                     </p>
                   </div>
                 </div>
@@ -755,16 +867,13 @@ export default function CheckResult({
               {status === "PARTIAL_DATA" && (
                 <div className="bg-amber-500/[0.07] border border-amber-500/25 flex gap-3 p-4 rounded-xl text-amber-300">
                   <AlertTriangle className="h-5 mt-0.5 shrink-0 w-5" />
-
                   <div>
                     <p className="font-bold text-sm">
                       Partial security information
                     </p>
-
                     <p className="leading-relaxed mt-1 text-amber-200/75 text-xs">
-                      The security provider returned incomplete
-                      information. Some risks may not have been
-                      evaluated.
+                      The security provider returned incomplete information.
+                      Some risks may not have been evaluated.
                     </p>
                   </div>
                 </div>
@@ -772,32 +881,8 @@ export default function CheckResult({
             </section>
           )}
 
-          {/* Full API response */}
-          <details className="bg-[#080d0b] border border-white/[0.07] group overflow-hidden rounded-xl">
-            <summary className="cursor-pointer flex gap-3 items-center justify-between list-none p-4">
-              <span className="flex font-bold gap-2 items-center text-xs text-zinc-300 tracking-wider uppercase">
-                <FileSearch className="h-4 text-emerald-400 w-4" />
-                {copy.details}
-              </span>
-
-              <span className="group-open:rotate-180 text-xs text-zinc-500 transition-transform">
-                ↓
-              </span>
-            </summary>
-
-            <div className="border-t border-white/[0.06] p-4">
-              <p className="font-bold mb-3 text-[10px] text-emerald-400 tracking-wider uppercase">
-                {copy.rawResponse}
-              </p>
-
-              <pre className="bg-black/30 break-all font-mono leading-relaxed max-h-[500px] overflow-auto p-3 rounded-lg text-[10px] text-zinc-300 whitespace-pre-wrap">
-                {JSON.stringify(response, null, 2)}
-              </pre>
-            </div>
-          </details>
-
           {/* Report actions */}
-          <div className="border-t border-white/[0.07] flex flex-wrap gap-2 pt-5">
+          <div className="safesign-report-actions border-t border-white/[0.07] flex flex-wrap gap-2 pt-5">
             <button
               type="button"
               onClick={() => void copyReport()}
