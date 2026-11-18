@@ -81,6 +81,16 @@ export function SignGuardWidget() {
     const [connecting, setConnecting] = useState(false);
     const [error, setError] = useState("");
     const [report, setReport] = useState<InspectionReport | null>(null);
+    const [inspectedTransaction, setInspectedTransaction] = useState<{
+        from: string;
+        to: string;
+        data: string;
+        value: string;
+        chainId: number;
+    } | null>(null);
+
+    const [signing, setSigning] = useState(false);
+    const [transactionHash, setTransactionHash] = useState("");
 
     const selectedNetwork = NETWORKS.find(
         (item) => item.value === network
@@ -134,6 +144,8 @@ export function SignGuardWidget() {
     const inspect = async () => {
         setError("");
         setReport(null);
+        setInspectedTransaction(null);
+        setTransactionHash("");
 
         if (!wallet) {
             setError("Connect your wallet first.");
@@ -167,6 +179,14 @@ export function SignGuardWidget() {
 
             setLoading(true);
 
+            const transactionToInspect = {
+                from: wallet,
+                to: recipient.trim(),
+                data: calldata.trim() || "0x",
+                value: valueInWei,
+                chainId: selectedNetwork.chainId,
+            };
+
             const response = await fetch(
                 `${API_BASE}/api/sign-guard/inspect`,
                 {
@@ -176,13 +196,7 @@ export function SignGuardWidget() {
                     },
                     body: JSON.stringify({
                         network,
-                        transaction: {
-                            from: wallet,
-                            to: recipient.trim(),
-                            data: calldata.trim() || "0x",
-                            value: valueInWei,
-                            chainId: selectedNetwork.chainId,
-                        },
+                        transaction: transactionToInspect,
                     }),
                 }
             );
@@ -196,6 +210,8 @@ export function SignGuardWidget() {
             }
 
             setReport(result.report);
+            setInspectedTransaction(transactionToInspect);
+            setTransactionHash("");
         } catch (err) {
             setError(
                 err instanceof Error
@@ -206,6 +222,71 @@ export function SignGuardWidget() {
             setLoading(false);
         }
     };
+
+    const reviewAndSign = async () => {
+  setError("");
+  setTransactionHash("");
+
+  if (!window.ethereum || !inspectedTransaction || !report) {
+    setError("Inspect a transaction before signing.");
+    return;
+  }
+
+  if (
+    report.riskLevel === "CRITICAL" ||
+    report.riskLevel === "HIGH_RISK" ||
+    report.decision === "DO_NOT_SIGN"
+  ) {
+    setError("Sign Guard blocked this high-risk transaction.");
+    return;
+  }
+
+  try {
+    setSigning(true);
+
+    // Confirm the connected account has not changed.
+    const accounts = await window.ethereum.request({
+      method: "eth_accounts",
+    }) as string[];
+
+    if (
+      !accounts?.length ||
+      accounts[0].toLowerCase() !== inspectedTransaction.from.toLowerCase()
+    ) {
+      throw new Error("Wallet account changed. Reconnect and inspect again.");
+    }
+
+    // Confirm the wallet is still on the inspected network.
+    const currentChain = await window.ethereum.request({
+      method: "eth_chainId",
+    }) as string;
+
+    if (
+      Number.parseInt(currentChain, 16) !== inspectedTransaction.chainId
+    ) {
+      throw new Error("Wallet network changed. Inspect the transaction again.");
+    }
+
+    // Send exactly the transaction that was inspected.
+    const hash = await window.ethereum.request({
+      method: "eth_sendTransaction",
+      params: [{
+        from: inspectedTransaction.from,
+        to: inspectedTransaction.to,
+        data: inspectedTransaction.data,
+        value: `0x${BigInt(inspectedTransaction.value).toString(16)}`,
+      }],
+    }) as string;
+
+    setTransactionHash(hash);
+  } catch (err) {
+    setError(
+      err instanceof Error ? err.message : "Wallet signing failed."
+    );
+  } finally {
+    setSigning(false);
+  }
+};
 
     const riskColor = (risk: string) => {
         if (risk === "CRITICAL" || risk === "HIGH_RISK") {
@@ -393,6 +474,43 @@ export function SignGuardWidget() {
                             )}
                             {loading ? "Inspecting transaction..." : "Inspect before signing"}
                         </button>
+
+                        {report && inspectedTransaction && (
+                            <div className="space-y-3">
+                                {report.riskLevel === "CRITICAL" ||
+                                    report.riskLevel === "HIGH_RISK" ? (
+                                    <div className="bg-red-500/10 border border-red-500/30 p-3 rounded-lg text-red-300 text-xs">
+                                        <ShieldAlert size={18} className="mb-2" />
+                                        Signing blocked: dangerous risk indicators were detected.
+                                    </div>
+                                ) : (
+                                    <button
+                                        onClick={reviewAndSign}
+                                        disabled={signing || Boolean(transactionHash)}
+                                        className="bg-emerald-500/10 border border-emerald-400/40 disabled:opacity-50 flex font-bold gap-2 hover:bg-emerald-500/20 items-center justify-center px-4 py-3.5 rounded-xl text-emerald-300 text-sm transition w-full"
+                                    >
+                                        {signing ? (
+                                            <Loader2 size={18} className="animate-spin" />
+                                        ) : (
+                                            <Wallet size={18} />
+                                        )}
+                                        {signing
+                                            ? "Waiting for wallet..."
+                                            : transactionHash
+                                                ? "Transaction submitted"
+                                                : "Review & Sign in Wallet"}
+                                    </button>
+                                )}
+
+                                {transactionHash && (
+                                    <div className="bg-emerald-500/10 border border-emerald-500/20 break-all p-3 rounded-lg text-emerald-300 text-xs">
+                                        <CheckCircle2 size={16} className="mb-2" />
+                                        Transaction submitted successfully.
+                                        <p className="font-mono mt-2">{transactionHash}</p>
+                                    </div>
+                                )}
+                            </div>
+                        )}
 
                         {report && (
                             <div className="border-t border-white/10 pt-4 space-y-3">
