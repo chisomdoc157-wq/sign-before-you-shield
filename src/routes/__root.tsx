@@ -14,6 +14,7 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { StartupExperience } from "../components/safesign/StartupExperience";
+import { SignGuardWidget } from "../components/safesign/SignGuardWidget";
 
 function NotFoundComponent() {
   return (
@@ -185,8 +186,8 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <StartupExperience>
-        {/* Keep this Outlet: all nested SafeSign pages render here. */}
         <Outlet />
+        <SignGuardWidget />
       </StartupExperience>
     </QueryClientProvider>
   );
