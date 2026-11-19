@@ -92,7 +92,7 @@ export function SignGuardWidget() {
     const [error, setError] = useState("");
     const [report, setReport] = useState<InspectionReport | null>(null);
     const [inspectedTransaction, setInspectedTransaction] = useState<{
-        from: string;
+        from?: string;
         to: string;
         data: string;
         value: string;
@@ -157,11 +157,6 @@ export function SignGuardWidget() {
         setInspectedTransaction(null);
         setTransactionHash("");
 
-        if (!wallet) {
-            setError("Connect your wallet first.");
-            return;
-        }
-
         if (!recipient.trim()) {
             setError("Enter the transaction recipient or contract address.");
             return;
@@ -172,12 +167,7 @@ export function SignGuardWidget() {
             return;
         }
 
-        if (walletChainId !== selectedNetwork.chainId) {
-            setError(
-                `Your wallet is on chain ${walletChainId}. Switch it to ${selectedNetwork.label} before inspecting.`
-            );
-            return;
-        }
+       
 
         if (!/^0x([a-fA-F0-9]{2})*$/.test(calldata.trim())) {
             setError("Transaction data must be valid hexadecimal calldata beginning with 0x.");
@@ -190,7 +180,7 @@ export function SignGuardWidget() {
             setLoading(true);
 
             const transactionToInspect = {
-                from: wallet,
+                ...(wallet ? { from: wallet } : {}),
                 to: recipient.trim(),
                 data: calldata.trim() || "0x",
                 value: valueInWei,
@@ -237,8 +227,13 @@ export function SignGuardWidget() {
   setError("");
   setTransactionHash("");
 
-  if (!window.ethereum || !inspectedTransaction || !report) {
-    setError("Inspect a transaction before signing.");
+        if (
+            !window.ethereum ||
+            !inspectedTransaction ||
+            !inspectedTransaction.from ||
+            !report
+        ) {
+            setError("Connect your wallet and inspect the transaction before signing.");
     return;
   }
 
@@ -482,7 +477,7 @@ export function SignGuardWidget() {
 
                         <button
                             onClick={inspect}
-                            disabled={loading || !wallet}
+                            disabled={loading || !recipient.trim()}
                             className="bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-40 flex font-bold gap-2 hover:bg-emerald-400 items-center justify-center px-4 py-3.5 rounded-xl text-[#041109] text-sm transition w-full"
                         >
                             {loading ? (
