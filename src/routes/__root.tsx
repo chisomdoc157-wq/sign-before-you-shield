@@ -1,3 +1,4 @@
+
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   Outlet,
@@ -12,13 +13,17 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
+import { StartupExperience } from "../components/safesign/StartupExperience";
+import { SignGuardWidget } from "../components/safesign/SignGuardWidget";
 
 function NotFoundComponent() {
   return (
     <div className="bg-background flex items-center justify-center min-h-screen px-4">
       <div className="max-w-md text-center">
         <h1 className="font-bold text-7xl text-foreground">404</h1>
-        <h2 className="font-semibold mt-4 text-foreground text-xl">Page not found</h2>
+        <h2 className="font-semibold mt-4 text-foreground text-xl">
+          Page not found
+        </h2>
         <p className="mt-2 text-muted-foreground text-sm">
           The page you're looking for doesn't exist or has been moved.
         </p>
@@ -38,8 +43,11 @@ function NotFoundComponent() {
 function ErrorComponent({ error, reset }: ErrorComponentProps) {
   console.error(error);
   const router = useRouter();
+
   useEffect(() => {
-    reportLovableError(error, { boundary: "tanstack_root_error_component" });
+    reportLovableError(error, {
+      boundary: "tanstack_root_error_component",
+    });
   }, [error]);
 
   return (
@@ -73,41 +81,45 @@ function ErrorComponent({ error, reset }: ErrorComponentProps) {
   );
 }
 
-export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
+export const Route = createRootRouteWithContext<{
+  queryClient: QueryClient;
+}>()({
   head: () => ({
-  meta: [
-    { charSet: "utf-8" },
-    { name: "viewport", content: "width=device-width, initial-scale=1" },
-
-    { title: "SafeSign — Web3 Transaction & Token Security" },
-    {
-      name: "description",
-      content:
-        "Verify blockchain transactions, match crypto payments, and check token security across multiple networks with SafeSign.",
-    },
-
-    { property: "og:type", content: "website" },
-    { property: "og:site_name", content: "SafeSign" },
-    {
-      property: "og:title",
-      content: "SafeSign — Web3 Transaction & Token Security",
-    },
-    {
-      property: "og:description",
-      content:
-        "Verify transactions. Match payments. Check token security. Make safer Web3 decisions with SafeSign.",
-    },
-    {
-      property: "og:url",
-      content: "https://sign-before-you-shield.vercel.app/",
-    },
+    meta: [
+      { charSet: "utf-8" },
+      { name: "viewport", content: "width=device-width, initial-scale=1" },
+      {
+        title: "SafeSign — Web3 Transaction & Token Security",
+      },
+      {
+        name: "description",
+        content:
+          "Verify blockchain transactions, match crypto payments, and check token security across multiple networks with SafeSign.",
+      },
+      { property: "og:type", content: "website" },
+      { property: "og:site_name", content: "SafeSign" },
+      {
+        property: "og:title",
+        content: "SafeSign — Web3 Transaction & Token Security",
+      },
+      {
+        property: "og:description",
+        content:
+          "Verify transactions. Match payments. Check token security. Make safer Web3 decisions with SafeSign.",
+      },
+      {
+        property: "og:url",
+        content: "https://sign-before-you-shield.vercel.app/",
+      },
       {
         property: "og:image",
-        content: "https://sign-before-you-shield.vercel.app/safesign-preview.png?v=2",
+        content:
+          "https://sign-before-you-shield.vercel.app/safesign-preview.png?v=2",
       },
       {
         property: "og:image:secure_url",
-        content: "https://sign-before-you-shield.vercel.app/safesign-preview.png?v=2",
+        content:
+          "https://sign-before-you-shield.vercel.app/safesign-preview.png?v=2",
       },
       {
         property: "og:image:alt",
@@ -119,30 +131,35 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       },
       {
         name: "twitter:image",
-        content: "https://sign-before-you-shield.vercel.app/safesign-preview.png?v=2",
+        content:
+          "https://sign-before-you-shield.vercel.app/safesign-preview.png?v=2",
       },
-  ],
-  links: [
-    {
-      rel: "stylesheet",
-      href: appCss,
-    },
-    { rel: "icon", href: "/safesign-icon.svg", type: "image/svg+xml" },
-    {
-      rel: "preconnect",
-      href: "https://fonts.googleapis.com",
-    },
-    {
-      rel: "preconnect",
-      href: "https://fonts.gstatic.com",
-      crossOrigin: "anonymous",
-    },
-    {
-      rel: "stylesheet",
-      href: "https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap",
-    },
-  ],
-}),
+    ],
+    links: [
+      {
+        rel: "stylesheet",
+        href: appCss,
+      },
+      {
+        rel: "icon",
+        href: "/safesign-icon.svg",
+        type: "image/svg+xml",
+      },
+      {
+        rel: "preconnect",
+        href: "https://fonts.googleapis.com",
+      },
+      {
+        rel: "preconnect",
+        href: "https://fonts.gstatic.com",
+        crossOrigin: "anonymous",
+      },
+      {
+        rel: "stylesheet",
+        href: "https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap",
+      },
+    ],
+  }),
   shellComponent: RootShell,
   component: RootComponent,
   notFoundComponent: NotFoundComponent,
@@ -168,8 +185,10 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-      <Outlet />
+      <StartupExperience>
+        <Outlet />
+        <SignGuardWidget />
+      </StartupExperience>
     </QueryClientProvider>
   );
 }
