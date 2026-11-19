@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
     ShieldCheck,
     ShieldAlert,
@@ -71,6 +71,16 @@ type InspectionReport = {
 
 export function SignGuardWidget() {
     const [isOpen, setIsOpen] = useState(false);
+    useEffect(() => {
+        if (!isOpen) return;
+
+        const previousOverflow = document.body.style.overflow;
+        document.body.style.overflow = "hidden";
+
+        return () => {
+            document.body.style.overflow = previousOverflow;
+        };
+    }, [isOpen]);
     const [wallet, setWallet] = useState("");
     const [walletChainId, setWalletChainId] = useState<number | null>(null);
     const [network, setNetwork] = useState("ethereum");
@@ -324,6 +334,14 @@ export function SignGuardWidget() {
                     <span className="-right-1 -top-1 absolute bg-emerald-400 border-2 border-[#071b12] h-3 rounded-full w-3" />
                 </button>
             )}
+
+            {isOpen && (
+    <div
+        className="backdrop-blur-[2px] bg-black/50 fixed inset-0 z-[99]"
+        onClick={() => setIsOpen(false)}
+        aria-hidden="true"
+    />
+)}
 
             {isOpen && (
                 <div className="bg-[#07100c] border border-emerald-500/20 bottom-4 fixed flex flex-col max-h-[85vh] max-w-[420px] overflow-hidden right-4 rounded-2xl shadow-2xl shadow-black/60 text-white w-[calc(100vw-2rem)] z-[100]">
