@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { parseEther } from "viem";
 import { EthereumProvider } from "@walletconnect/ethereum-provider";
+import { saveReport } from "@/lib/safesign-storage";
 
 declare global {
     interface Window {
@@ -451,6 +452,43 @@ if (!result.report) {
             setReport(result.report);
             setInspectedTransaction(transactionToInspect);
             setTransactionHash("");
+
+            // Save the complete successful API response to existing IndexedDB.
+            try {
+                const reportTitle = [
+                    "Sign Guard",
+                    selectedNetwork.label,
+                    result.report.riskLevel || "Inspection",
+                ].join(" · ");
+
+                const searchText = [
+                    network,
+                    selectedNetwork.label,
+                    recipient.trim(),
+                    wallet,
+                    result.report.riskLevel,
+                    result.report.decision,
+                    result.report.analysis?.operation,
+                    result.report.analysis?.decodedFunction,
+                ]
+                    .filter(Boolean)
+                    .join(" ");
+
+                await saveReport({
+                    id: crypto.randomUUID(),
+                    mode: "sign_guard",
+                    network,
+                    title: reportTitle,
+                    searchText,
+                    createdAt: new Date().toISOString(),
+                    response: result as Record<string, unknown>,
+                });
+            } catch (saveError) {
+                console.error("Could not save Sign Guard report:", saveError);
+                setError(
+                    "Inspection completed, but the report could not be saved to local History."
+                );
+            }
         } catch (err) {
             setError(
                 err instanceof Error

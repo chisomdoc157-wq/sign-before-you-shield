@@ -22,6 +22,7 @@ import {
   getReports,
   type SavedReport,
 } from "@/lib/safesign-storage";
+import SignGuardHistoryResult from "@/components/safesign/SignGuardHistoryResult";
 
 export const Route = createFileRoute("/history")({
   component: HistoryPage,
@@ -33,6 +34,7 @@ function getModeLabel(mode: SavedReport["mode"]) {
     match: "Payment authentication",
     token: "Token security",
     link: "URL security scan",
+    sign_guard: "Sign Guard inspection",
   };
   return labels[mode] ?? "Security check";
 }
