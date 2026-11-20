@@ -58,6 +58,7 @@ function WalletCheckPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
@@ -82,35 +83,31 @@ function WalletCheckPage() {
         }),
       });
 
-        const responseText = await response.text();
+      let data: any;
 
-        let data;
+      try {
+        data = await response.json();
+      } catch {
+        throw new Error(
+          `Invalid response from SafeSign backend (HTTP ${response.status}). Check the backend deployment and API endpoint.`
+        );
+      }
 
-        try {
-            data = JSON.parse(responseText);
-        } catch (err) {
-            setError(
-                err instanceof TypeError
-                    ? "Could not connect to SafeSign backend. Check the backend URL, deployment and CORS settings."
-                    : err instanceof Error
-                        ? err.message
-                        : "Could not complete wallet security check."
-            );
-        } finally {
-            setLoading(false);
-        }
-
-        if (!response.ok || !data.success || !data.report) {
-            throw new Error(
-                data.message || `Wallet check failed (${response.status}).`
-            );
-        }
-
-      if (!response.ok || !data.success || !data.report) {
-        throw new Error(data.message || "Wallet check failed.");
+      if (!response.ok || !data?.success || !data?.report) {
+        throw new Error(
+          data?.message ||
+          `Wallet check failed (HTTP ${response.status}).`
+        );
       }
 
       const result = data.report as WalletReport;
+
+      if (typeof result.status !== "string") {
+        throw new Error(
+          "The backend returned an incomplete wallet security report."
+        );
+      }
+
       setReport(result);
 
       await saveReport({
@@ -123,15 +120,18 @@ function WalletCheckPage() {
         response: data,
       });
     } catch (err) {
+      console.error("Wallet check error:", err);
+
       setError(
         err instanceof Error
           ? err.message
-          : "Could not complete wallet security check.",
+          : "Could not complete wallet security check."
       );
     } finally {
       setLoading(false);
     }
   };
+
 
   const flagged = report?.status === "RISK_DETECTED";
 

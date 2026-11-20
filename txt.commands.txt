@@ -3,4 +3,3 @@ npm install i18next react-i18next
 npm install react react-dom lucide-react @radix-ui/react-slot class-variance-authority clsx tailwind-merge
 npm install -D @types/react @types/react-dom
 
-5061230907797925927  01/31 368

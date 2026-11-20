@@ -403,13 +403,26 @@ export function SignGuardWidget() {
                 }
             );
 
-            const result = await response.json();
+            let result: any;
 
-            if (!response.ok || !result.success) {
-                throw new Error(
-                    result.message || "Transaction inspection failed."
-                );
-            }
+try {
+    result = await response.json();
+} catch {
+    throw new Error(
+        `Sign Guard returned an invalid response (HTTP ${response.status}).`
+    );
+}
+
+if (!response.ok || !result?.success) {
+    throw new Error(
+        result?.message ||
+        `Transaction inspection failed (HTTP ${response.status}).`
+    );
+}
+
+if (!result.report) {
+    throw new Error("Sign Guard returned no inspection report.");
+}
 
             setReport(result.report);
             setInspectedTransaction(transactionToInspect);
@@ -644,7 +657,7 @@ export function SignGuardWidget() {
                                     <button
                                         onClick={connectWalletConnect}
                                         disabled={connecting}
-                                        className="bg-white/5 border border-emerald-500/30 disabled:opacity-50 flex font-semibold gap-2 hover:bg-white/10 items-center justify-center px-4 py-3 rounded-lg text-white text-sm transition w-full"
+                                        className="bg-white/5 border border-emerald-500/30 disabled:opacity-50 flex font-semibold gap-2 hover:bg-white/10 items-center justify-center px-4 py-3 rounded-lg text-sm text-white transition w-full"
                                     >
                                         {connecting ? (
                                             <Loader2
