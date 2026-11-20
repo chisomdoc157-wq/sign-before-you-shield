@@ -160,7 +160,7 @@ function JsonTree({
                 {value.map((item, index) => (
                     <div
                         key={index}
-                        className="border border-white/[0.07] bg-black/10 p-2.5 rounded-lg"
+                        className="bg-black/10 border border-white/[0.07] p-2.5 rounded-lg"
                     >
                         <p className="font-semibold mb-2 text-[10px] text-slate-500">
                             Item {index + 1}
@@ -200,11 +200,11 @@ function JsonTree({
                                 : "space-y-1"
                         }
                     >
-                        <p className="font-medium text-[10px] text-slate-500 uppercase tracking-wide">
+                        <p className="font-medium text-[10px] text-slate-500 tracking-wide uppercase">
                             {formatLabel(key)}
                         </p>
 
-                        <div className="text-xs leading-relaxed">
+                        <div className="leading-relaxed text-xs">
                             <JsonTree
                                 value={item}
                                 depth={depth + 1}
@@ -232,7 +232,7 @@ function JsonSection({
 }) {
     return (
         <div className="bg-white/[0.03] border border-white/10 p-3 rounded-xl space-y-3">
-            <div className="flex items-center justify-between gap-2">
+            <div className="flex gap-2 items-center justify-between">
                 <h3 className="font-semibold text-slate-300 text-xs tracking-wider uppercase">
                     {title}
                 </h3>
@@ -1114,7 +1114,7 @@ export function SignGuardWidget() {
                                                     {finding.evidence !==
                                                         undefined && (
                                                         <div className="border-t border-white/10 pt-3">
-                                                            <p className="font-semibold mb-2 text-[10px] text-slate-500 uppercase tracking-wider">
+                                                            <p className="font-semibold mb-2 text-[10px] text-slate-500 tracking-wider uppercase">
                                                                 Finding evidence
                                                             </p>
 
@@ -1138,7 +1138,7 @@ export function SignGuardWidget() {
 
                                 {/* Disclaimer */}
                                 <div className="bg-white/[0.03] border border-white/10 p-3 rounded-lg">
-                                    <p className="font-semibold mb-2 text-slate-400 text-[10px] tracking-wider uppercase">
+                                    <p className="font-semibold mb-2 text-[10px] text-slate-400 tracking-wider uppercase">
                                         Important disclaimer
                                     </p>
 
@@ -1147,29 +1147,6 @@ export function SignGuardWidget() {
                                             "No disclaimer was returned by the inspection service."}
                                     </p>
                                 </div>
-
-                                {/* Raw complete report */}
-                                <details className="bg-white/[0.03] border border-white/10 rounded-xl">
-                                    <summary className="cursor-pointer flex font-semibold gap-2 items-center list-none p-3 text-slate-400 text-xs">
-                                        <ChevronRight
-                                            size={15}
-                                            className="details-chevron"
-                                        />
-                                        <FileJson
-                                            size={15}
-                                            className="text-emerald-400"
-                                        />
-                                        View complete raw report JSON
-                                    </summary>
-
-                                    <pre className="border-t border-white/10 max-h-80 overflow-auto p-3 text-[10px] leading-relaxed text-emerald-200 whitespace-pre-wrap break-all">
-                                        {JSON.stringify(
-                                            report,
-                                            null,
-                                            2
-                                        )}
-                                    </pre>
-                                </details>
                             </div>
                         )}
 
