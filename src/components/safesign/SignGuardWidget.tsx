@@ -911,7 +911,7 @@ if (!result.report) {
                                                 Simulation
                                             </span>
                                             <span className="text-right text-slate-200">
-                                                {report.analysis.simulation.status}
+                                                {report.analysis.simulation?.status ?? "Not available"}
                                             </span>
                                         </div>
 
@@ -945,7 +945,7 @@ if (!result.report) {
                                                     Token security
                                                 </span>
                                                 <span className="text-right text-slate-200">
-                                                    {report.analysis.tokenSecurity.status}
+                                                    {report.analysis.tokenSecurity?.status ?? "Not available"}
                                                 </span>
                                             </div>
                                         )}
