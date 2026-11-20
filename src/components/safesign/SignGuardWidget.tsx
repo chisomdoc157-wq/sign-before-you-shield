@@ -57,24 +57,48 @@ type Finding = {
     evidence?: unknown;
 };
 
-type InspectionReport = {
+interface InspectionReport {
     riskLevel: string;
     decision: string;
     analysis: {
+        network: string;
+        chainId: number;
+        from: string | null;
+        to: string;
+        value: string;
         operation: string;
         decodedFunction: string | null;
+        decodedParameters: unknown;
         approval: {
             spender?: string;
             amount?: string;
             unlimited?: boolean;
         } | null;
-        simulation: {
+        targetContract?: {
+            address: string;
+            exists: boolean;
             status: string;
-            message: string;
-        };
+        } | null;
+        spenderContract?: unknown;
         tokenSecurity: {
             status: string;
         } | null;
+        addressSecurity?: unknown[];
+        rpcSimulation?: {
+            status: string;
+            provider?: string;
+            message?: string;
+        };
+        goPlusSimulation?: {
+            status: string;
+            provider?: string;
+            message?: string;
+        };
+        tenderlySimulation?: {
+            status: string;
+            provider?: string;
+            message?: string;
+        };
     };
     findings: Finding[];
     disclaimer: string;
@@ -908,10 +932,28 @@ if (!result.report) {
 
                                         <div className="flex gap-3 justify-between">
                                             <span className="text-slate-500">
-                                                Simulation
+                                                RPC Simulation
                                             </span>
                                             <span className="text-right text-slate-200">
-                                                {report.analysis.simulation?.status ?? "Not available"}
+                                                {report.analysis.rpcSimulation?.status ?? "Not available"}
+                                            </span>
+                                        </div>
+
+                                        <div className="flex gap-3 justify-between">
+                                            <span className="text-slate-500">
+                                                GoPlus Simulation
+                                            </span>
+                                            <span className="text-right text-slate-200">
+                                                {report.analysis.goPlusSimulation?.status ?? "Not available"}
+                                            </span>
+                                        </div>
+
+                                        <div className="flex gap-3 justify-between">
+                                            <span className="text-slate-500">
+                                                Tenderly Simulation
+                                            </span>
+                                            <span className="text-right text-slate-200">
+                                                {report.analysis.tenderlySimulation?.status ?? "Not available"}
                                             </span>
                                         </div>
 
