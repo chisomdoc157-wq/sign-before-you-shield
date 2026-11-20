@@ -10,6 +10,8 @@ import {
     CheckCircle2,
     AlertTriangle,
     ChevronDown,
+    ChevronRight,
+    FileJson,
 } from "lucide-react";
 import { parseEther } from "viem";
 import { EthereumProvider } from "@walletconnect/ethereum-provider";
@@ -61,49 +63,190 @@ type Finding = {
 interface InspectionReport {
     riskLevel: string;
     decision: string;
-    analysis: {
-        network: string;
-        chainId: number;
-        from: string | null;
-        to: string;
-        value: string;
-        operation: string;
-        decodedFunction: string | null;
-        decodedParameters: unknown;
-        approval: {
-            spender?: string;
-            amount?: string;
-            unlimited?: boolean;
-        } | null;
-        targetContract?: {
-            address: string;
-            exists: boolean;
-            status: string;
-        } | null;
-        spenderContract?: unknown;
-        tokenSecurity: {
-            status: string;
-        } | null;
-        addressSecurity?: unknown[];
-        rpcSimulation?: {
-            status: string;
-            provider?: string;
-            message?: string;
-        };
-        goPlusSimulation?: {
-            status: string;
-            provider?: string;
-            message?: string;
-        };
-        tenderlySimulation?: {
-            status: string;
-            provider?: string;
-            message?: string;
-        };
-    };
+    analysis: Record<string, unknown>;
     findings: Finding[];
     disclaimer: string;
-};
+}
+
+interface InspectedTransaction {
+    from?: string;
+    to: string;
+    data: string;
+    value: string;
+    chainId: number;
+}
+
+/**
+ * Converts backend property names into readable labels.
+ * Example: decodedFunction -> Decoded Function
+ */
+function formatLabel(value: string): string {
+    return value
+        .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
+        .replace(/_/g, " ")
+        .replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
+/**
+ * Renders every kind of JSON value recursively.
+ *
+ * This is important because backend inspection results contain
+ * nested objects, arrays, provider responses and security evidence.
+ */
+function JsonTree({
+    value,
+    depth = 0,
+}: {
+    value: unknown;
+    depth?: number;
+}) {
+    if (value === null || value === undefined) {
+        return (
+            <span className="italic text-slate-500">
+                Not returned
+            </span>
+        );
+    }
+
+    if (typeof value === "boolean") {
+        return (
+            <span
+                className={
+                    value
+                        ? "font-medium text-emerald-400"
+                        : "font-medium text-slate-400"
+                }
+            >
+                {value ? "Yes" : "No"}
+            </span>
+        );
+    }
+
+    if (typeof value === "string") {
+        if (!value.length) {
+            return (
+                <span className="italic text-slate-500">
+                    Empty
+                </span>
+            );
+        }
+
+        return (
+            <span className="break-all text-slate-200">
+                {value}
+            </span>
+        );
+    }
+
+    if (typeof value === "number") {
+        return (
+            <span className="font-mono text-slate-200">
+                {value.toLocaleString()}
+            </span>
+        );
+    }
+
+    if (Array.isArray(value)) {
+        if (value.length === 0) {
+            return (
+                <span className="italic text-slate-500">
+                    No entries returned
+                </span>
+            );
+        }
+
+        return (
+            <div className="space-y-2">
+                {value.map((item, index) => (
+                    <div
+                        key={index}
+                        className="border border-white/[0.07] bg-black/10 p-2.5 rounded-lg"
+                    >
+                        <p className="font-semibold mb-2 text-[10px] text-slate-500">
+                            Item {index + 1}
+                        </p>
+
+                        <JsonTree
+                            value={item}
+                            depth={depth + 1}
+                        />
+                    </div>
+                ))}
+            </div>
+        );
+    }
+
+    if (typeof value === "object") {
+        const entries = Object.entries(
+            value as Record<string, unknown>
+        );
+
+        if (entries.length === 0) {
+            return (
+                <span className="italic text-slate-500">
+                    Empty object
+                </span>
+            );
+        }
+
+        return (
+            <div className="space-y-2">
+                {entries.map(([key, item]) => (
+                    <div
+                        key={key}
+                        className={
+                            depth === 0
+                                ? "border-b border-white/[0.06] last:border-0 pb-2 last:pb-0"
+                                : "space-y-1"
+                        }
+                    >
+                        <p className="font-medium text-[10px] text-slate-500 uppercase tracking-wide">
+                            {formatLabel(key)}
+                        </p>
+
+                        <div className="text-xs leading-relaxed">
+                            <JsonTree
+                                value={item}
+                                depth={depth + 1}
+                            />
+                        </div>
+                    </div>
+                ))}
+            </div>
+        );
+    }
+
+    return (
+        <span className="break-all text-slate-200">
+            {String(value)}
+        </span>
+    );
+}
+
+function JsonSection({
+    title,
+    value,
+}: {
+    title: string;
+    value: unknown;
+}) {
+    return (
+        <div className="bg-white/[0.03] border border-white/10 p-3 rounded-xl space-y-3">
+            <div className="flex items-center justify-between gap-2">
+                <h3 className="font-semibold text-slate-300 text-xs tracking-wider uppercase">
+                    {title}
+                </h3>
+
+                <FileJson
+                    size={15}
+                    className="text-emerald-400"
+                />
+            </div>
+
+            <JsonTree value={value} />
+        </div>
+    );
+}
 
 export function SignGuardWidget() {
     const [isOpen, setIsOpen] = useState(false);
@@ -122,16 +265,12 @@ export function SignGuardWidget() {
     const [loading, setLoading] = useState(false);
     const [connecting, setConnecting] = useState(false);
     const [error, setError] = useState("");
+    const [saveWarning, setSaveWarning] = useState("");
 
     const [report, setReport] = useState<InspectionReport | null>(null);
 
-    const [inspectedTransaction, setInspectedTransaction] = useState<{
-        from?: string;
-        to: string;
-        data: string;
-        value: string;
-        chainId: number;
-    } | null>(null);
+    const [inspectedTransaction, setInspectedTransaction] =
+        useState<InspectedTransaction | null>(null);
 
     const [signing, setSigning] = useState(false);
     const [transactionHash, setTransactionHash] = useState("");
@@ -158,7 +297,10 @@ export function SignGuardWidget() {
     useEffect(() => {
         const provider = activeProvider.current as
             | (EIP1193Provider & {
-                  on?: (event: string, callback: (...args: unknown[]) => void) => void;
+                  on?: (
+                      event: string,
+                      callback: (...args: unknown[]) => void
+                  ) => void;
                   removeListener?: (
                       event: string,
                       callback: (...args: unknown[]) => void
@@ -219,9 +361,18 @@ export function SignGuardWidget() {
         provider.on("disconnect", handleDisconnect);
 
         return () => {
-            provider.removeListener?.("accountsChanged", handleAccountsChanged);
-            provider.removeListener?.("chainChanged", handleChainChanged);
-            provider.removeListener?.("disconnect", handleDisconnect);
+            provider.removeListener?.(
+                "accountsChanged",
+                handleAccountsChanged
+            );
+            provider.removeListener?.(
+                "chainChanged",
+                handleChainChanged
+            );
+            provider.removeListener?.(
+                "disconnect",
+                handleDisconnect
+            );
         };
     }, [walletType]);
 
@@ -240,13 +391,13 @@ export function SignGuardWidget() {
 
             const provider = window.ethereum;
 
-            const accounts = await provider.request({
+            const accounts = (await provider.request({
                 method: "eth_requestAccounts",
-            }) as string[];
+            })) as string[];
 
-            const chainHex = await provider.request({
+            const chainHex = (await provider.request({
                 method: "eth_chainId",
-            }) as string;
+            })) as string;
 
             if (!accounts?.length) {
                 throw new Error("No wallet account was returned.");
@@ -318,13 +469,13 @@ export function SignGuardWidget() {
 
             await provider.connect();
 
-            const accounts = await provider.request({
+            const accounts = (await provider.request({
                 method: "eth_accounts",
-            }) as string[];
+            })) as string[];
 
-            const chainHex = await provider.request({
+            const chainHex = (await provider.request({
                 method: "eth_chainId",
-            }) as string;
+            })) as string;
 
             if (!accounts?.length) {
                 throw new Error(
@@ -369,6 +520,7 @@ export function SignGuardWidget() {
 
     const inspect = async () => {
         setError("");
+        setSaveWarning("");
         setReport(null);
         setInspectedTransaction(null);
         setTransactionHash("");
@@ -406,7 +558,7 @@ export function SignGuardWidget() {
 
             setLoading(true);
 
-            const transactionToInspect = {
+            const transactionToInspect: InspectedTransaction = {
                 ...(wallet ? { from: wallet } : {}),
                 to: recipient.trim(),
                 data: calldata.trim() || "0x",
@@ -430,30 +582,33 @@ export function SignGuardWidget() {
 
             let result: any;
 
-try {
-    result = await response.json();
-} catch {
-    throw new Error(
-        `Sign Guard returned an invalid response (HTTP ${response.status}).`
-    );
-}
+            try {
+                result = await response.json();
+            } catch {
+                throw new Error(
+                    `Sign Guard returned an invalid response (HTTP ${response.status}).`
+                );
+            }
 
-if (!response.ok || !result?.success) {
-    throw new Error(
-        result?.message ||
-        `Transaction inspection failed (HTTP ${response.status}).`
-    );
-}
+            if (!response.ok || !result?.success) {
+                throw new Error(
+                    result?.message ||
+                        `Transaction inspection failed (HTTP ${response.status}).`
+                );
+            }
 
-if (!result.report) {
-    throw new Error("Sign Guard returned no inspection report.");
-}
+            if (!result.report) {
+                throw new Error(
+                    "Sign Guard returned no inspection report."
+                );
+            }
 
-            setReport(result.report);
+            // Display the complete report returned by the backend.
+            setReport(result.report as InspectionReport);
             setInspectedTransaction(transactionToInspect);
             setTransactionHash("");
 
-            // Save the complete successful API response to existing IndexedDB.
+            // Save the complete API response, not just its summary.
             try {
                 const reportTitle = [
                     "Sign Guard",
@@ -470,6 +625,12 @@ if (!result.report) {
                     result.report.decision,
                     result.report.analysis?.operation,
                     result.report.analysis?.decodedFunction,
+                    ...(Array.isArray(result.report.findings)
+                        ? result.report.findings.map(
+                              (finding: Finding) =>
+                                  `${finding.code} ${finding.message}`
+                          )
+                        : []),
                 ]
                     .filter(Boolean)
                     .join(" ");
@@ -484,9 +645,13 @@ if (!result.report) {
                     response: result as Record<string, unknown>,
                 });
             } catch (saveError) {
-                console.error("Could not save Sign Guard report:", saveError);
-                setError(
-                    "Inspection completed, but the report could not be saved to local History."
+                console.error(
+                    "Could not save Sign Guard report:",
+                    saveError
+                );
+
+                setSaveWarning(
+                    "Inspection completed successfully, but this report could not be saved to local History."
                 );
             }
         } catch (err) {
@@ -532,9 +697,9 @@ if (!result.report) {
         try {
             setSigning(true);
 
-            const accounts = await provider.request({
+            const accounts = (await provider.request({
                 method: "eth_accounts",
-            }) as string[];
+            })) as string[];
 
             if (
                 !accounts?.length ||
@@ -546,9 +711,9 @@ if (!result.report) {
                 );
             }
 
-            const currentChain = await provider.request({
+            const currentChain = (await provider.request({
                 method: "eth_chainId",
-            }) as string;
+            })) as string;
 
             if (
                 Number.parseInt(currentChain, 16) !==
@@ -560,7 +725,7 @@ if (!result.report) {
             }
 
             // Send the exact transaction that was inspected.
-            const hash = await provider.request({
+            const hash = (await provider.request({
                 method: "eth_sendTransaction",
                 params: [
                     {
@@ -572,7 +737,7 @@ if (!result.report) {
                         ).toString(16)}`,
                     },
                 ],
-            }) as string;
+            })) as string;
 
             setTransactionHash(hash);
         } catch (err) {
@@ -637,6 +802,7 @@ if (!result.report) {
 
             {isOpen && (
                 <div className="bg-[#07100c] border border-emerald-500/20 bottom-4 fixed flex flex-col max-h-[85vh] max-w-[420px] overflow-hidden right-4 rounded-2xl shadow-2xl shadow-black/60 text-white w-[calc(100vw-2rem)] z-[100]">
+                    {/* Header */}
                     <div className="bg-[#0b1711] border-b border-white/10 flex items-center justify-between px-4 py-4">
                         <div className="flex gap-3 items-center">
                             <div className="bg-emerald-500/10 flex h-10 items-center justify-center rounded-xl text-emerald-400 w-10">
@@ -677,7 +843,9 @@ if (!result.report) {
                                             : "text-slate-500"
                                     }`}
                                 >
-                                    {wallet ? "Connected" : "Not connected"}
+                                    {wallet
+                                        ? "Connected"
+                                        : "Not connected"}
                                 </span>
                             </div>
 
@@ -688,7 +856,8 @@ if (!result.report) {
                                     </p>
 
                                     <p className="text-slate-500 text-xs">
-                                        Chain ID: {walletChainId} · {walletType}
+                                        Chain ID: {walletChainId} ·{" "}
+                                        {walletType}
                                     </p>
 
                                     <button
@@ -824,7 +993,7 @@ if (!result.report) {
                             />
                         </div>
 
-                        {/* Error */}
+                        {/* Errors */}
                         {error && (
                             <div className="bg-red-500/10 border border-red-500/20 flex gap-2 leading-relaxed p-3 rounded-lg text-red-300 text-xs">
                                 <AlertTriangle
@@ -832,6 +1001,16 @@ if (!result.report) {
                                     className="mt-0.5 shrink-0"
                                 />
                                 <span>{error}</span>
+                            </div>
+                        )}
+
+                        {saveWarning && (
+                            <div className="bg-amber-500/10 border border-amber-500/20 flex gap-2 leading-relaxed p-3 rounded-lg text-amber-300 text-xs">
+                                <AlertTriangle
+                                    size={16}
+                                    className="mt-0.5 shrink-0"
+                                />
+                                <span>{saveWarning}</span>
                             </div>
                         )}
 
@@ -855,7 +1034,146 @@ if (!result.report) {
                                 : "Inspect before signing"}
                         </button>
 
-                        {/* Signing */}
+                        {/* Full inspection report */}
+                        {report && (
+                            <div className="border-t border-white/10 pt-4 space-y-3">
+                                {/* Risk summary */}
+                                <div
+                                    className={`rounded-xl border p-4 ${riskColor(
+                                        report.riskLevel
+                                    )}`}
+                                >
+                                    <div className="flex gap-2 items-center">
+                                        {report.riskLevel === "CRITICAL" ||
+                                        report.riskLevel === "HIGH_RISK" ? (
+                                            <ShieldAlert size={22} />
+                                        ) : report.riskLevel === "LOW_RISK" ? (
+                                            <CheckCircle2 size={22} />
+                                        ) : (
+                                            <AlertTriangle size={22} />
+                                        )}
+
+                                        <div>
+                                            <p className="font-semibold opacity-70 text-[10px] tracking-widest uppercase">
+                                                Sign Guard risk assessment
+                                            </p>
+
+                                            <p className="font-bold text-lg">
+                                                {formatLabel(
+                                                    report.riskLevel
+                                                )}
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <p className="font-semibold mt-3 text-sm">
+                                        {formatLabel(report.decision)}
+                                    </p>
+                                </div>
+
+                                {/* All backend analysis fields */}
+                                <JsonSection
+                                    title="Complete transaction analysis"
+                                    value={report.analysis}
+                                />
+
+                                {/* Findings */}
+                                <div className="space-y-2">
+                                    <p className="font-semibold text-slate-400 text-xs tracking-wider uppercase">
+                                        Security findings (
+                                        {report.findings?.length ?? 0})
+                                    </p>
+
+                                    {report.findings?.length ? (
+                                        report.findings.map(
+                                            (finding, index) => (
+                                                <div
+                                                    key={`${finding.code}-${index}`}
+                                                    className="bg-white/[0.03] border border-white/10 p-3 rounded-lg space-y-3"
+                                                >
+                                                    <div className="flex gap-2 items-start justify-between">
+                                                        <span className="font-semibold text-slate-200 text-xs">
+                                                            {formatLabel(
+                                                                finding.code
+                                                            )}
+                                                        </span>
+
+                                                        <span
+                                                            className={`text-[10px] font-bold shrink-0 ${severityColor(
+                                                                finding.severity
+                                                            )}`}
+                                                        >
+                                                            {finding.severity}
+                                                        </span>
+                                                    </div>
+
+                                                    <p className="leading-relaxed text-slate-400 text-xs">
+                                                        {finding.message}
+                                                    </p>
+
+                                                    {finding.evidence !==
+                                                        undefined && (
+                                                        <div className="border-t border-white/10 pt-3">
+                                                            <p className="font-semibold mb-2 text-[10px] text-slate-500 uppercase tracking-wider">
+                                                                Finding evidence
+                                                            </p>
+
+                                                            <JsonTree
+                                                                value={
+                                                                    finding.evidence
+                                                                }
+                                                            />
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )
+                                        )
+                                    ) : (
+                                        <p className="bg-white/[0.03] border border-white/10 p-3 rounded-lg text-slate-500 text-xs">
+                                            No findings were returned by
+                                            the inspection service.
+                                        </p>
+                                    )}
+                                </div>
+
+                                {/* Disclaimer */}
+                                <div className="bg-white/[0.03] border border-white/10 p-3 rounded-lg">
+                                    <p className="font-semibold mb-2 text-slate-400 text-[10px] tracking-wider uppercase">
+                                        Important disclaimer
+                                    </p>
+
+                                    <p className="leading-relaxed text-[11px] text-slate-400">
+                                        {report.disclaimer ||
+                                            "No disclaimer was returned by the inspection service."}
+                                    </p>
+                                </div>
+
+                                {/* Raw complete report */}
+                                <details className="bg-white/[0.03] border border-white/10 rounded-xl">
+                                    <summary className="cursor-pointer flex font-semibold gap-2 items-center list-none p-3 text-slate-400 text-xs">
+                                        <ChevronRight
+                                            size={15}
+                                            className="details-chevron"
+                                        />
+                                        <FileJson
+                                            size={15}
+                                            className="text-emerald-400"
+                                        />
+                                        View complete raw report JSON
+                                    </summary>
+
+                                    <pre className="border-t border-white/10 max-h-80 overflow-auto p-3 text-[10px] leading-relaxed text-emerald-200 whitespace-pre-wrap break-all">
+                                        {JSON.stringify(
+                                            report,
+                                            null,
+                                            2
+                                        )}
+                                    </pre>
+                                </details>
+                            </div>
+                        )}
+
+                        {/* Signing controls */}
                         {report && inspectedTransaction && (
                             <div className="space-y-3">
                                 {report.riskLevel === "CRITICAL" ||
@@ -909,169 +1227,6 @@ if (!result.report) {
                                         </p>
                                     </div>
                                 )}
-                            </div>
-                        )}
-
-                        {/* Report */}
-                        {report && (
-                            <div className="border-t border-white/10 pt-4 space-y-3">
-                                <div
-                                    className={`rounded-xl border p-4 ${riskColor(
-                                        report.riskLevel
-                                    )}`}
-                                >
-                                    <div className="flex gap-2 items-center">
-                                        {report.riskLevel === "CRITICAL" ||
-                                        report.riskLevel === "HIGH_RISK" ? (
-                                            <ShieldAlert size={22} />
-                                        ) : report.riskLevel === "LOW_RISK" ? (
-                                            <CheckCircle2 size={22} />
-                                        ) : (
-                                            <AlertTriangle size={22} />
-                                        )}
-
-                                        <div>
-                                            <p className="font-semibold opacity-70 text-[10px] tracking-widest uppercase">
-                                                Sign Guard risk assessment
-                                            </p>
-
-                                            <p className="font-bold text-lg">
-                                                {report.riskLevel.replaceAll(
-                                                    "_",
-                                                    " "
-                                                )}
-                                            </p>
-                                        </div>
-                                    </div>
-
-                                    <p className="font-semibold mt-3 text-sm">
-                                        {report.decision.replaceAll(
-                                            "_",
-                                            " "
-                                        )}
-                                    </p>
-                                </div>
-
-                                {/* Transaction analysis */}
-                                <div className="bg-white/[0.03] border border-white/10 p-3 rounded-xl">
-                                    <p className="font-semibold mb-2 text-slate-400 text-xs tracking-wider uppercase">
-                                        Transaction analysis
-                                    </p>
-
-                                    <div className="space-y-2 text-xs">
-                                        <div className="flex gap-3 justify-between">
-                                            <span className="text-slate-500">
-                                                Operation
-                                            </span>
-                                            <span className="text-right text-slate-200">
-                                                {report.analysis.operation}
-                                            </span>
-                                        </div>
-
-                                        <div className="flex gap-3 justify-between">
-                                            <span className="text-slate-500">
-                                                RPC Simulation
-                                            </span>
-                                            <span className="text-right text-slate-200">
-                                                {report.analysis.rpcSimulation?.status ?? "Not available"}
-                                            </span>
-                                        </div>
-
-                                        <div className="flex gap-3 justify-between">
-                                            <span className="text-slate-500">
-                                                GoPlus Simulation
-                                            </span>
-                                            <span className="text-right text-slate-200">
-                                                {report.analysis.goPlusSimulation?.status ?? "Not available"}
-                                            </span>
-                                        </div>
-
-                                        <div className="flex gap-3 justify-between">
-                                            <span className="text-slate-500">
-                                                Tenderly Simulation
-                                            </span>
-                                            <span className="text-right text-slate-200">
-                                                {report.analysis.tenderlySimulation?.status ?? "Not available"}
-                                            </span>
-                                        </div>
-
-                                        {report.analysis.approval && (
-                                            <>
-                                                <div className="flex gap-3 justify-between">
-                                                    <span className="text-slate-500">
-                                                        Spender
-                                                    </span>
-                                                    <span className="break-all font-mono max-w-[65%] text-right text-slate-200">
-                                                        {report.analysis.approval.spender}
-                                                    </span>
-                                                </div>
-
-                                                <div className="flex gap-3 justify-between">
-                                                    <span className="text-slate-500">
-                                                        Unlimited approval
-                                                    </span>
-                                                    <span className="text-right text-slate-200">
-                                                        {report.analysis.approval.unlimited
-                                                            ? "Yes"
-                                                            : "No"}
-                                                    </span>
-                                                </div>
-                                            </>
-                                        )}
-
-                                        {report.analysis.tokenSecurity && (
-                                            <div className="flex gap-3 justify-between">
-                                                <span className="text-slate-500">
-                                                    Token security
-                                                </span>
-                                                <span className="text-right text-slate-200">
-                                                    {report.analysis.tokenSecurity?.status ?? "Not available"}
-                                                </span>
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-
-                                {/* Findings */}
-                                <div className="space-y-2">
-                                    <p className="font-semibold text-slate-400 text-xs tracking-wider uppercase">
-                                        Findings ({report.findings.length})
-                                    </p>
-
-                                    {report.findings.map(
-                                        (finding, index) => (
-                                            <div
-                                                key={`${finding.code}-${index}`}
-                                                className="bg-white/[0.03] border border-white/10 p-3 rounded-lg"
-                                            >
-                                                <div className="flex gap-2 items-center justify-between mb-1">
-                                                    <span className="font-semibold text-slate-200 text-xs">
-                                                        {finding.code.replaceAll(
-                                                            "_",
-                                                            " "
-                                                        )}
-                                                    </span>
-
-                                                    <span
-                                                        className={`text-[10px] font-bold ${severityColor(
-                                                            finding.severity
-                                                        )}`}
-                                                    >
-                                                        {finding.severity}
-                                                    </span>
-                                                </div>
-
-                                                <p className="leading-relaxed text-slate-400 text-xs">
-                                                    {finding.message}
-                                                </p>
-                                            </div>
-                                        )
-                                    )}
-                                </div>
-
-                                <p className="leading-relaxed text-[10px] text-slate-500">
-                                    {report.disclaimer}
-                                </p>
                             </div>
                         )}
                     </div>
